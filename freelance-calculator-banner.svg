@@ -1,0 +1,117 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="630" viewBox="0 0 1200 630">
+  <defs>
+    <style>
+      @import url('https://fonts.googleapis.com/css2?family=Syne:wght@800&amp;family=DM+Mono:wght@400&amp;display=swap');
+    </style>
+    <!-- Grid pattern -->
+    <pattern id="grid" width="40" height="40" patternUnits="userSpaceOnUse">
+      <path d="M 40 0 L 0 0 0 40" fill="none" stroke="#c8f135" stroke-width="0.4" opacity="0.15"/>
+    </pattern>
+    <!-- Glow filter -->
+    <filter id="glow">
+      <feGaussianBlur stdDeviation="4" result="coloredBlur"/>
+      <feMerge>
+        <feMergeNode in="coloredBlur"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+    <filter id="softglow">
+      <feGaussianBlur stdDeviation="12" result="coloredBlur"/>
+      <feMerge>
+        <feMergeNode in="coloredBlur"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+  </defs>
+
+  <!-- Background -->
+  <rect width="1200" height="630" fill="#0a0a0a"/>
+
+  <!-- Grid -->
+  <rect width="1200" height="630" fill="url(#grid)"/>
+
+  <!-- Accent glow blob top left -->
+  <ellipse cx="150" cy="150" rx="220" ry="180" fill="#c8f135" opacity="0.04"/>
+  <!-- Accent glow blob bottom right -->
+  <ellipse cx="1050" cy="500" rx="280" ry="200" fill="#c8f135" opacity="0.05"/>
+
+  <!-- Left accent bar -->
+  <rect x="80" y="140" width="3" height="350" fill="#c8f135" opacity="0.6"/>
+
+  <!-- Tag pill -->
+  <rect x="100" y="148" width="160" height="26" fill="#c8f135" rx="0"/>
+  <text x="180" y="166" font-family="'DM Mono', monospace" font-size="11" font-weight="700" fill="#000" text-anchor="middle" letter-spacing="2">FREE TOOL</text>
+
+  <!-- Main headline line 1 -->
+  <text x="100" y="260" font-family="'Syne', 'Arial Black', sans-serif" font-size="82" font-weight="800" fill="#f0f0f0" letter-spacing="-2">Are you actually</text>
+
+  <!-- Main headline line 2 — accent -->
+  <text x="100" y="358" font-family="'Syne', 'Arial Black', sans-serif" font-size="82" font-weight="800" fill="#c8f135" letter-spacing="-2" filter="url(#softglow)">making money?</text>
+
+  <!-- Subtext -->
+  <text x="100" y="415" font-family="'DM Mono', monospace" font-size="18" fill="#666666" letter-spacing="0">Most freelancers think they earn $75/hr.</text>
+  <text x="100" y="442" font-family="'DM Mono', monospace" font-size="18" fill="#666666" letter-spacing="0">After taxes &amp; overhead — they're making $18.</text>
+
+  <!-- Divider line -->
+  <line x1="100" y1="475" x2="680" y2="475" stroke="#2a2a2a" stroke-width="1"/>
+
+  <!-- Bottom label -->
+  <text x="100" y="500" font-family="'DM Mono', monospace" font-size="13" fill="#444" letter-spacing="3">FREELANCE PROFIT CALCULATOR</text>
+
+  <!-- RIGHT SIDE: Mock UI card -->
+  <rect x="750" y="80" width="390" height="470" fill="#141414" stroke="#2a2a2a" stroke-width="1" rx="0"/>
+  <!-- Top accent bar on card -->
+  <rect x="750" y="80" width="390" height="3" fill="#c8f135"/>
+
+  <!-- Card title -->
+  <text x="775" y="120" font-family="'DM Mono', monospace" font-size="11" fill="#444" letter-spacing="2">⚡ YOUR REAL NUMBERS</text>
+  <line x1="775" y1="130" x2="1115" y2="130" stroke="#2a2a2a" stroke-width="1"/>
+
+  <!-- Stat rows -->
+  <!-- Row 1 -->
+  <rect x="775" y="148" width="2" height="52" fill="#c8f135"/>
+  <text x="788" y="168" font-family="'DM Mono', monospace" font-size="10" fill="#666" letter-spacing="1">TRUE NET / MONTH</text>
+  <text x="788" y="194" font-family="'Syne', 'Arial Black', sans-serif" font-size="28" font-weight="800" fill="#c8f135">$3,240</text>
+
+  <!-- Row 2 -->
+  <rect x="960" y="148" width="2" height="52" fill="#2a2a2a"/>
+  <text x="973" y="168" font-family="'DM Mono', monospace" font-size="10" fill="#666" letter-spacing="1">REAL HOURLY RATE</text>
+  <text x="973" y="194" font-family="'Syne', 'Arial Black', sans-serif" font-size="28" font-weight="800" fill="#ff4444">$29/hr</text>
+
+  <line x1="775" y1="218" x2="1115" y2="218" stroke="#1c1c1c" stroke-width="1"/>
+
+  <!-- Row 3 -->
+  <rect x="775" y="232" width="2" height="52" fill="#2a2a2a"/>
+  <text x="788" y="252" font-family="'DM Mono', monospace" font-size="10" fill="#666" letter-spacing="1">GROSS MONTHLY</text>
+  <text x="788" y="278" font-family="'Syne', 'Arial Black', sans-serif" font-size="28" font-weight="800" fill="#f0f0f0">$6,000</text>
+
+  <!-- Row 4 -->
+  <rect x="960" y="232" width="2" height="52" fill="#2a2a2a"/>
+  <text x="973" y="252" font-family="'DM Mono', monospace" font-size="10" fill="#666" letter-spacing="1">TAX OWED / MO</text>
+  <text x="973" y="278" font-family="'Syne', 'Arial Black', sans-serif" font-size="28" font-weight="800" fill="#f0f0f0">$1,530</text>
+
+  <line x1="775" y1="302" x2="1115" y2="302" stroke="#1c1c1c" stroke-width="1"/>
+
+  <!-- Verdict box -->
+  <rect x="775" y="318" width="330" height="72" fill="#1c1c1c" stroke="none"/>
+  <rect x="775" y="318" width="3" height="72" fill="#c8f135"/>
+  <text x="790" y="338" font-family="'DM Mono', monospace" font-size="10" fill="#c8f135" letter-spacing="2">📋 YOUR VERDICT</text>
+  <text x="790" y="358" font-family="'DM Mono', monospace" font-size="12" fill="#999">You're billing $75/hr but keeping</text>
+  <text x="790" y="378" font-family="'DM Mono', monospace" font-size="12" fill="#999">$29 — a 61% illusion. Raise rates.</text>
+
+  <!-- Goal section -->
+  <line x1="775" y1="410" x2="1115" y2="410" stroke="#2a2a2a" stroke-width="1"/>
+  <text x="775" y="432" font-family="'DM Mono', monospace" font-size="10" fill="#444" letter-spacing="2">🚀 TO HIT YOUR GOAL: $80K</text>
+
+  <!-- Goal stats -->
+  <rect x="775" y="448" width="150" height="70" fill="#1c1c1c" stroke="#2a2a2a" stroke-width="1"/>
+  <text x="850" y="473" font-family="'DM Mono', monospace" font-size="9" fill="#666" text-anchor="middle" letter-spacing="1">RATE YOU NEED</text>
+  <text x="850" y="502" font-family="'Syne', 'Arial Black', sans-serif" font-size="22" font-weight="800" fill="#c8f135" text-anchor="middle">$94/hr</text>
+
+  <rect x="937" y="448" width="170" height="70" fill="#1c1c1c" stroke="#2a2a2a" stroke-width="1"/>
+  <text x="1022" y="473" font-family="'DM Mono', monospace" font-size="9" fill="#666" text-anchor="middle" letter-spacing="1">RATE GAP</text>
+  <text x="1022" y="502" font-family="'Syne', 'Arial Black', sans-serif" font-size="22" font-weight="800" fill="#ff4444" text-anchor="middle">+$19/hr</text>
+
+  <!-- Bottom branding -->
+  <text x="600" y="600" font-family="'DM Mono', monospace" font-size="11" fill="#2a2a2a" text-anchor="middle" letter-spacing="3">FREELANCE PROFIT CALCULATOR  ·  KNOW YOUR REAL WORTH</text>
+</svg>
