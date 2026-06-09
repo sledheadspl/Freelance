@@ -1,0 +1,572 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Daisy Gulch Gold Co. — Summer 2027</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;700;800&family=DM+Mono:wght@300;400&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --gold: #FFB800;
+    --gold2: #FFDF80;
+    --gold-dim: #8B6914;
+    --dirt: #3D2B1F;
+    --dark: #0C0A07;
+    --text: #F5EDD0;
+    --muted: #6B5C40;
+  }
+
+  html, body {
+    width: 100%; height: 100%;
+    overflow: hidden;
+    background: var(--dark);
+    font-family: 'DM Mono', monospace;
+    cursor: pointer;
+    user-select: none;
+  }
+
+  /* Canvas for particles */
+  #canvas {
+    position: fixed;
+    inset: 0;
+    z-index: 0;
+    pointer-events: none;
+  }
+
+  /* Progress bar */
+  #progress {
+    position: fixed;
+    bottom: 0; left: 0;
+    height: 3px;
+    background: var(--gold);
+    z-index: 100;
+    transition: none;
+    box-shadow: 0 0 12px var(--gold);
+  }
+
+  /* Scene container */
+  #stage {
+    position: fixed;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 10;
+  }
+
+  .scene {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 40px;
+    opacity: 0;
+    pointer-events: none;
+    text-align: center;
+  }
+
+  .scene.active {
+    pointer-events: auto;
+  }
+
+  /* Typography */
+  .eyebrow {
+    font-family: 'DM Mono', monospace;
+    font-size: clamp(10px, 1.5vw, 14px);
+    letter-spacing: 4px;
+    text-transform: uppercase;
+    color: var(--gold);
+    margin-bottom: 24px;
+    opacity: 0;
+  }
+
+  .headline {
+    font-family: 'Syne', sans-serif;
+    font-size: clamp(38px, 8vw, 96px);
+    font-weight: 800;
+    line-height: 0.95;
+    letter-spacing: -2px;
+    color: var(--text);
+    margin-bottom: 20px;
+    opacity: 0;
+  }
+
+  .headline .gold { color: var(--gold); }
+  .headline .dim  { color: var(--muted); }
+
+  .sub {
+    font-size: clamp(12px, 2vw, 18px);
+    color: var(--muted);
+    line-height: 1.8;
+    max-width: 640px;
+    opacity: 0;
+    letter-spacing: 0.5px;
+  }
+
+  .sub .hi { color: var(--text); }
+
+  /* Stat grid */
+  .stat-row {
+    display: flex;
+    gap: clamp(16px, 4vw, 48px);
+    flex-wrap: wrap;
+    justify-content: center;
+    margin-top: 32px;
+    opacity: 0;
+  }
+
+  .stat {
+    text-align: center;
+    border-left: 2px solid var(--gold-dim);
+    padding-left: 20px;
+    text-align: left;
+  }
+
+  .stat-val {
+    font-family: 'Syne', sans-serif;
+    font-size: clamp(28px, 5vw, 52px);
+    font-weight: 800;
+    color: var(--gold);
+    line-height: 1;
+  }
+
+  .stat-label {
+    font-size: clamp(9px, 1.2vw, 12px);
+    color: var(--muted);
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    margin-top: 6px;
+  }
+
+  /* Pill list */
+  .pill-list {
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+    opacity: 0;
+    margin-top: 24px;
+  }
+
+  .pill {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    background: rgba(255,184,0,0.07);
+    border: 1px solid rgba(255,184,0,0.2);
+    padding: 14px 20px;
+    font-size: clamp(12px, 1.8vw, 15px);
+    color: var(--text);
+    letter-spacing: 0.5px;
+    text-align: left;
+  }
+
+  .pill-icon {
+    font-size: 18px;
+    flex-shrink: 0;
+  }
+
+  /* CTA */
+  .cta-block {
+    opacity: 0;
+    margin-top: 32px;
+    text-align: center;
+  }
+
+  .cta-tag {
+    display: inline-block;
+    background: var(--gold);
+    color: #000;
+    font-family: 'Syne', sans-serif;
+    font-weight: 800;
+    font-size: clamp(10px, 1.5vw, 13px);
+    letter-spacing: 3px;
+    text-transform: uppercase;
+    padding: 10px 28px;
+    margin-bottom: 20px;
+  }
+
+  .cta-sub {
+    font-size: clamp(11px, 1.5vw, 14px);
+    color: var(--muted);
+    letter-spacing: 2px;
+    text-transform: uppercase;
+  }
+
+  /* Grid overlay */
+  .grid-overlay {
+    position: fixed;
+    inset: 0;
+    background-image:
+      linear-gradient(rgba(255,184,0,0.025) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(255,184,0,0.025) 1px, transparent 1px);
+    background-size: 50px 50px;
+    pointer-events: none;
+    z-index: 1;
+  }
+
+  /* Vignette */
+  .vignette {
+    position: fixed;
+    inset: 0;
+    background: radial-gradient(ellipse at center, transparent 40%, rgba(0,0,0,0.75) 100%);
+    pointer-events: none;
+    z-index: 2;
+  }
+
+  /* Accent lines */
+  .accent-h {
+    width: clamp(60px, 8vw, 100px);
+    height: 2px;
+    background: var(--gold);
+    margin: 0 auto 28px;
+    opacity: 0;
+    box-shadow: 0 0 12px var(--gold);
+  }
+
+  /* Replay */
+  #replay {
+    position: fixed;
+    bottom: 24px;
+    right: 24px;
+    z-index: 200;
+    font-family: 'DM Mono', monospace;
+    font-size: 11px;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: var(--muted);
+    background: none;
+    border: 1px solid var(--muted);
+    padding: 8px 16px;
+    cursor: pointer;
+    opacity: 0;
+    transition: all 0.3s;
+  }
+
+  #replay:hover { color: var(--gold); border-color: var(--gold); }
+
+  /* Skip hint */
+  #hint {
+    position: fixed;
+    bottom: 20px;
+    left: 50%;
+    transform: translateX(-50%);
+    font-size: 11px;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: var(--muted);
+    z-index: 200;
+    opacity: 0;
+    transition: opacity 0.5s;
+  }
+
+  /* Scene number */
+  #scene-num {
+    position: fixed;
+    top: 24px;
+    right: 24px;
+    font-size: 11px;
+    letter-spacing: 3px;
+    color: var(--muted);
+    z-index: 200;
+    opacity: 0;
+    transition: opacity 0.5s;
+  }
+</style>
+</head>
+<body>
+
+<canvas id="canvas"></canvas>
+<div class="grid-overlay"></div>
+<div class="vignette"></div>
+
+<div id="progress"></div>
+<div id="hint">click to advance</div>
+<div id="scene-num">01 / 07</div>
+<button id="replay">↺ replay</button>
+
+<div id="stage">
+
+  <!-- SCENE 1: Location / Hook -->
+  <div class="scene" id="s1">
+    <div class="eyebrow">Murray Gold Belt · Northern Idaho</div>
+    <div class="headline">The Last Great<br><span class="gold">Gold Rush</span><br>District.</div>
+    <div class="accent-h"></div>
+    <div class="sub">310,000 ounces. One of the most historically rich placer districts in the lower 48. <span class="hi">Summer 2027 — we go back in.</span></div>
+  </div>
+
+  <!-- SCENE 2: The Operation -->
+  <div class="scene" id="s2">
+    <div class="eyebrow">Real Placer Mining · Daisy Gulch Gold Co.</div>
+    <div class="headline">This Is<br><span class="gold">Not</span> A<br>Simulation.</div>
+    <div class="sub" style="margin-top:24px;">No network. No studio. No script.<br><span class="hi">A 10-person crew. A mountain creek. Shovels in the ground.</span><br>Filmed and published every week.</div>
+  </div>
+
+  <!-- SCENE 3: Paid Position -->
+  <div class="scene" id="s3">
+    <div class="eyebrow">Paid Position · June–September 2027</div>
+    <div class="headline"><span class="gold">Paid.</span><br>Camera Ready.<br>On the Mountain.</div>
+    <div class="stat-row">
+      <div class="stat">
+        <div class="stat-val">$150–$250</div>
+        <div class="stat-label">Base daily rate</div>
+      </div>
+      <div class="stat">
+        <div class="stat-val">70</div>
+        <div class="stat-label">Working days</div>
+      </div>
+      <div class="stat">
+        <div class="stat-val">75%</div>
+        <div class="stat-label">Crew gold split</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- SCENE 4: Gold Upside -->
+  <div class="scene" id="s4">
+    <div class="eyebrow">Production Bonus · Mid-Season Projection</div>
+    <div class="headline"><span class="gold">$20K–$40K</span><br>In Gold.<br><span class="dim">On Top.</span></div>
+    <div class="sub" style="margin-top:24px;">That's the middle case — base daily rate plus your<br>share of every ounce pulled from the ground.<br><span class="hi">Hit a pay streak. That number climbs.</span></div>
+  </div>
+
+  <!-- SCENE 5: Who We Need -->
+  <div class="scene" id="s5">
+    <div class="eyebrow">Who We're Looking For</div>
+    <div class="headline" style="font-size:clamp(30px,5.5vw,68px);">You Don't Need<br>Experience.<br><span class="gold">You Need Grit.</span></div>
+    <div class="pill-list">
+      <div class="pill"><span class="pill-icon">⛏</span>Physically fit — you'll work in a creek all day</div>
+      <div class="pill"><span class="pill-icon">📹</span>Comfortable on camera — just be yourself</div>
+      <div class="pill"><span class="pill-icon">🏕</span>Reliable — if you say you're coming, you show up</div>
+      <div class="pill"><span class="pill-icon">🌍</span>Any background — the crew is better when we're different</div>
+    </div>
+  </div>
+
+  <!-- SCENE 6: Trial Day -->
+  <div class="scene" id="s6">
+    <div class="eyebrow">Before the Season Starts</div>
+    <div class="headline">One Day.<br><span class="gold">Get Paid.</span><br>See If It Fits.</div>
+    <div class="sub" style="margin-top:24px;">We run a paid trial day before the season.<br><span class="hi">You come to the site, do real work, get paid for the day.</span><br>We both decide if it's a fit. No commitment until then.</div>
+  </div>
+
+  <!-- SCENE 7: CTA -->
+  <div class="scene" id="s7">
+    <div class="eyebrow">Applications Open Now</div>
+    <div class="headline"><span class="gold">First Season.</span><br>June 2027.<br>Are You In?</div>
+    <div class="accent-h"></div>
+    <div class="cta-block">
+      <div class="cta-tag">Drop a DM or Comment Below</div>
+      <div class="cta-sub">Tell us who you are · Why this caught your eye · Idaho mountains await</div>
+    </div>
+    <div class="sub" style="margin-top:28px; font-size: clamp(10px, 1.4vw, 13px);">
+      #GoldMining &nbsp;·&nbsp; #Idaho &nbsp;·&nbsp; #MurrayGoldBelt &nbsp;·&nbsp; #PaidExpedition &nbsp;·&nbsp; #YouTubeChannel
+    </div>
+  </div>
+
+</div><!-- /stage -->
+
+<script>
+// ─── Particle System ──────────────────────────────────────────────────────────
+const canvas = document.getElementById('canvas');
+const ctx    = canvas.getContext('2d');
+let W, H, particles = [];
+
+function resize() {
+  W = canvas.width  = window.innerWidth;
+  H = canvas.height = window.innerHeight;
+}
+window.addEventListener('resize', resize);
+resize();
+
+function rnd(a, b) { return a + Math.random() * (b - a); }
+
+function spawnParticle(x, y) {
+  return {
+    x: x ?? rnd(0, W),
+    y: y ?? rnd(0, H),
+    size: rnd(1, 3.5),
+    speedX: rnd(-0.4, 0.4),
+    speedY: rnd(-0.8, -0.15),
+    alpha: rnd(0.2, 0.9),
+    decay: rnd(0.002, 0.006),
+    gold: Math.random() > 0.3,
+  };
+}
+
+// seed initial particles
+for (let i = 0; i < 120; i++) particles.push(spawnParticle());
+
+function updateParticles() {
+  // occasionally spawn from bottom
+  if (Math.random() < 0.4) {
+    particles.push(spawnParticle(rnd(0, W), H + 5));
+  }
+  particles = particles.filter(p => p.alpha > 0);
+  for (const p of particles) {
+    p.x += p.speedX + Math.sin(Date.now() * 0.001 + p.y) * 0.2;
+    p.y += p.speedY;
+    p.alpha -= p.decay;
+  }
+}
+
+function drawParticles() {
+  ctx.clearRect(0, 0, W, H);
+  for (const p of particles) {
+    ctx.save();
+    ctx.globalAlpha = p.alpha;
+    ctx.fillStyle = p.gold
+      ? (p.size > 2.5 ? '#FFB800' : '#FFDF80')
+      : 'rgba(180,140,60,0.6)';
+    ctx.shadowBlur = p.size > 2 ? 8 : 0;
+    ctx.shadowColor = '#FFB800';
+    ctx.beginPath();
+    // diamond shape for larger particles
+    if (p.size > 2) {
+      ctx.moveTo(p.x, p.y - p.size);
+      ctx.lineTo(p.x + p.size * 0.6, p.y);
+      ctx.lineTo(p.x, p.y + p.size);
+      ctx.lineTo(p.x - p.size * 0.6, p.y);
+      ctx.closePath();
+    } else {
+      ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
+    }
+    ctx.fill();
+    ctx.restore();
+  }
+}
+
+function animateParticles() {
+  updateParticles();
+  drawParticles();
+  requestAnimationFrame(animateParticles);
+}
+animateParticles();
+
+// ─── Scene Engine ─────────────────────────────────────────────────────────────
+const scenes     = Array.from(document.querySelectorAll('.scene'));
+const total      = scenes.length;
+const progressEl = document.getElementById('progress');
+const replayBtn  = document.getElementById('replay');
+const hintEl     = document.getElementById('hint');
+const numEl      = document.getElementById('scene-num');
+let current      = -1;
+let autoTimer    = null;
+let started      = false;
+
+// Per-scene durations in ms
+const durations = [5500, 5000, 6000, 5500, 6500, 5500, 8000];
+
+function pad(n) { return String(n).padStart(2, '0'); }
+
+function animIn(el, opts = {}) {
+  const { delay = 0, duration = 600, from = 'bottom', dist = 30 } = opts;
+  const ty = from === 'top' ? -dist : from === 'bottom' ? dist : 0;
+  const tx = from === 'left' ? -dist : from === 'right' ? dist : 0;
+  el.animate([
+    { opacity: 0, transform: `translate(${tx}px, ${ty}px)` },
+    { opacity: 1, transform: 'translate(0,0)' }
+  ], { delay, duration, easing: 'cubic-bezier(.16,1,.3,1)', fill: 'forwards' });
+}
+
+function showScene(idx) {
+  if (idx >= total) { endShow(); return; }
+
+  // hide all
+  scenes.forEach((s, i) => {
+    if (i === idx) return;
+    s.style.opacity = '0';
+    s.classList.remove('active');
+    // reset children
+    s.querySelectorAll('.eyebrow,.headline,.sub,.stat-row,.pill-list,.cta-block,.accent-h').forEach(c => {
+      c.style.opacity = '0';
+    });
+  });
+
+  const scene = scenes[idx];
+  scene.style.opacity = '1';
+  scene.classList.add('active');
+  current = idx;
+
+  numEl.textContent = `${pad(idx+1)} / ${pad(total)}`;
+  numEl.style.opacity = '1';
+  hintEl.style.opacity = idx === 0 ? '1' : '0.5';
+
+  // animate children in
+  const els = [
+    scene.querySelector('.eyebrow'),
+    scene.querySelector('.headline'),
+    scene.querySelector('.accent-h'),
+    scene.querySelector('.sub'),
+    scene.querySelector('.stat-row'),
+    scene.querySelector('.pill-list'),
+    scene.querySelector('.cta-block'),
+  ].filter(Boolean);
+
+  els.forEach((el, i) => animIn(el, { delay: i * 160, duration: 700 }));
+
+  // pill items stagger
+  scene.querySelectorAll('.pill').forEach((p, i) => {
+    p.style.opacity = '0';
+    animIn(p, { delay: 400 + i * 120, duration: 500 });
+  });
+
+  // stat items stagger
+  scene.querySelectorAll('.stat').forEach((s, i) => {
+    s.style.opacity = '0';
+    animIn(s, { delay: 400 + i * 150, duration: 500 });
+  });
+
+  // progress bar
+  progressEl.style.transition = 'none';
+  progressEl.style.width = ((idx / total) * 100) + '%';
+  requestAnimationFrame(() => {
+    progressEl.style.transition = `width ${durations[idx]}ms linear`;
+    progressEl.style.width = (((idx + 1) / total) * 100) + '%';
+  });
+
+  // auto-advance
+  clearTimeout(autoTimer);
+  if (idx < total - 1) {
+    autoTimer = setTimeout(() => showScene(idx + 1), durations[idx]);
+  } else {
+    autoTimer = setTimeout(endShow, durations[idx]);
+  }
+}
+
+function endShow() {
+  clearTimeout(autoTimer);
+  progressEl.style.width = '100%';
+  replayBtn.style.opacity = '1';
+  hintEl.style.opacity = '0';
+}
+
+function startShow() {
+  started = true;
+  replayBtn.style.opacity = '0';
+  showScene(0);
+}
+
+// click to advance
+document.addEventListener('click', (e) => {
+  if (e.target === replayBtn) { startShow(); return; }
+  if (!started) { startShow(); return; }
+  clearTimeout(autoTimer);
+  if (current < total - 1) {
+    showScene(current + 1);
+  } else {
+    endShow();
+  }
+});
+
+replayBtn.addEventListener('click', (e) => {
+  e.stopPropagation();
+  startShow();
+});
+
+// auto-start after brief pause
+setTimeout(startShow, 800);
+</script>
+</body>
+</html>
