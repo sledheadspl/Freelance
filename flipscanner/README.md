@@ -3,12 +3,12 @@
 Mobile-first reseller app: scan items, get real eBay sold-comp pricing and an
 ROI-based buy/skip recommendation, then manage inventory and listings.
 
-This repo currently implements **Build Order steps 1-6**: project scaffold
+This repo currently implements **Build Order steps 1-7**: project scaffold
 (Expo + TypeScript strict mode), the Supabase database schema, Supabase
 email/password auth, the camera scan flow (capture → upload → Claude vision
 item identification → results screen), the eBay sold-comps + ROI pipeline
-that powers the buy/skip recommendation, a scan history / watchlist UI, and
-the "I bought it" → inventory flow.
+that powers the buy/skip recommendation, a scan history / watchlist UI, the
+"I bought it" → inventory flow, and the "Connect eBay" OAuth flow (sandbox).
 
 ## Stack
 
@@ -32,8 +32,10 @@ src/
 supabase/migrations/  SQL schema + storage migrations
 supabase/functions/   Edge functions (Deno)
   scan/               Orchestrates identification, comps, and ROI
+  ebay-oauth-start/   Builds the eBay consent screen URL (auth required)
+  ebay-oauth-callback/ Exchanges the OAuth code for tokens (public, no JWT)
   _shared/            anthropic.ts (vision), comps.ts (eBay/Apify + cache),
-                       roi.ts (ROI math, unit tested)
+                       roi.ts (ROI math, unit tested), ebayOAuth.ts (Sell API OAuth)
 ```
 
 ## Getting started
@@ -58,14 +60,18 @@ supabase/functions/   Edge functions (Deno)
    supabase db push
    ```
 
-4. Set Edge Function secrets and deploy the `/scan` function:
+4. Set Edge Function secrets and deploy the functions:
 
    ```sh
    supabase secrets set ANTHROPIC_API_KEY=sk-ant-...
    # Optional — see "Registering for eBay developer access" below.
    supabase secrets set EBAY_CLIENT_ID=... EBAY_CLIENT_SECRET=...
    supabase secrets set APIFY_TOKEN=... APIFY_SOLD_LISTINGS_ACTOR_ID=...
+   # Required for the "Connect eBay" flow — see "eBay OAuth connect flow" below.
+   supabase secrets set EBAY_OAUTH_REDIRECT_URI=... EBAY_OAUTH_STATE_SECRET=...
    supabase functions deploy scan
+   supabase functions deploy ebay-oauth-start
+   supabase functions deploy ebay-oauth-callback
    ```
 
 5. Start the app:
@@ -129,6 +135,9 @@ npm test
 | `ANTHROPIC_API_KEY` | Supabase Edge Functions only | Used by the `/scan` function for Claude vision item ID. Never put this in the app. |
 | `EBAY_CLIENT_ID` / `EBAY_CLIENT_SECRET` | Supabase Edge Functions only | eBay Browse API (active listing counts) / Sell API credentials |
 | `APIFY_TOKEN` / `APIFY_SOLD_LISTINGS_ACTOR_ID` | Supabase Edge Functions only | Fallback sold-comps scraper used by `/scan` |
+| `EBAY_ENV` | Supabase Edge Functions only | `sandbox` (default) or `production` — selects the eBay OAuth/API base URLs |
+| `EBAY_OAUTH_REDIRECT_URI` | Supabase Edge Functions only | eBay "Your auth accepted URL" (RuName) — must point at the deployed `ebay-oauth-callback` function URL |
+| `EBAY_OAUTH_STATE_SECRET` | Supabase Edge Functions only | Random secret used to sign the OAuth `state` parameter (e.g. `openssl rand -hex 32`) |
 
 ### Registering for the Anthropic API key
 
@@ -147,7 +156,8 @@ npm test
    time. Until approved, sold comps fall back to an Apify scraper
    (`APIFY_TOKEN`).
 4. For Phase 2/3 selling features, enable the **Sell APIs** (Inventory,
-   Fulfillment) and configure the OAuth redirect URI for the app.
+   Fulfillment) and configure the OAuth redirect URI for the app — see "eBay
+   OAuth connect flow" below.
 5. Store all eBay credentials as Supabase Edge Function secrets, never in the
    mobile app bundle.
 
@@ -173,7 +183,30 @@ newest first, joined with the originating scan for a thumbnail, item name,
 category, purchase price, and status badge (unlisted/listed/sold/shipped).
 Tapping a row opens `/scan/[id]`.
 
+## eBay OAuth connect flow (step 7)
+
+The Settings tab (`app/(tabs)/settings.tsx`) shows a "Connect eBay" button
+when `profiles.ebay_connected` is false:
+
+1. The app calls the `ebay-oauth-start` Edge Function (authenticated), which
+   returns an eBay consent screen URL with a signed, short-lived `state`
+   token binding the flow to the signed-in user.
+2. The app opens that URL via `expo-web-browser`'s `openAuthSessionAsync`,
+   with `flipscanner://ebay-callback` as the return URL.
+3. After the user grants access, eBay redirects to the public
+   `ebay-oauth-callback` Edge Function (`EBAY_OAUTH_REDIRECT_URI`, configured
+   as the app's "Your auth accepted URL" / RuName in the eBay developer
+   portal). It verifies the `state`, exchanges the authorization code for a
+   refresh token (`supabase/functions/_shared/ebayOAuth.ts`), stores it on
+   `profiles`, sets `ebay_connected = true`, and redirects back to
+   `flipscanner://ebay-callback`, which closes the auth session.
+4. The app re-checks `profiles.ebay_connected` and shows "✓ Connected".
+
+This flow defaults to the eBay **sandbox** environment (`EBAY_ENV=sandbox`)
+with the `sell.inventory`, `sell.account`, and `sell.fulfillment` scopes,
+needed for the draft-listing and order-sync steps that follow.
+
 ## Next steps (Build Order)
 
-See the FlipScanner spec for the full plan. Step 7 (eBay OAuth connect flow,
-sandbox) is next.
+See the FlipScanner spec for the full plan. Step 8 (draft listing generator)
+is next.

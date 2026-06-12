@@ -15,7 +15,8 @@
         {
           "cameraPermission": "FlipScanner uses your camera to scan items so it can identify them and look up resale value."
         }
-      ]
+      ],
+      "expo-web-browser"
     ],
     "ios": {
       "supportsTablet": true
