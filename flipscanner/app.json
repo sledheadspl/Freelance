@@ -16,7 +16,13 @@
           "cameraPermission": "FlipScanner uses your camera to scan items so it can identify them and look up resale value."
         }
       ],
-      "expo-web-browser"
+      "expo-web-browser",
+      [
+        "expo-location",
+        {
+          "locationWhenInUsePermission": "FlipScanner uses your location to tag Discover finds with where they were found."
+        }
+      ]
     ],
     "ios": {
       "supportsTablet": true

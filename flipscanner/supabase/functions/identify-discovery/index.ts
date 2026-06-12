@@ -2,17 +2,18 @@ import { z } from 'npm:zod@^4';
 
 import { corsHeaders, jsonResponse } from '../_shared/cors.ts';
 import { getServiceClient, getUserClient } from '../_shared/supabaseClient.ts';
-import { identifyItem } from '../_shared/anthropic.ts';
+import { identifyDiscovery } from '../_shared/discoveryIdentify.ts';
+import { blobToBase64, mediaTypeForPath } from '../_shared/image.ts';
 import { getComps } from '../_shared/comps.ts';
 import { computeRoi } from '../_shared/roi.ts';
-import { blobToBase64, mediaTypeForPath } from '../_shared/image.ts';
 
 const FREE_TIER_MONTHLY_SCANS = 10;
 
 const requestSchema = z.object({
   storagePath: z.string().min(1),
-  textHint: z.string().max(500).optional(),
-  purchasePrice: z.number().positive().optional(),
+  latitude: z.number().min(-90).max(90).optional(),
+  longitude: z.number().min(-180).max(180).optional(),
+  capturedAt: z.string().datetime().optional(),
 });
 
 Deno.serve(async (req) => {
@@ -47,13 +48,13 @@ Deno.serve(async (req) => {
   if (!parsedBody.success) {
     return jsonResponse({ error: 'Invalid request', details: parsedBody.error.flatten() }, { status: 400 });
   }
-  const { storagePath, textHint, purchasePrice } = parsedBody.data;
+  const { storagePath, latitude, longitude, capturedAt } = parsedBody.data;
 
   if (!storagePath.startsWith(`${user.id}/`)) {
     return jsonResponse({ error: 'storagePath must be within your own folder' }, { status: 403 });
   }
 
-  // Rate limit per spec section 9/11: free tier capped at 10 scans/month, enforced server-side.
+  // Discoveries share the same monthly scan budget as resale scans.
   const { data: profile, error: profileError } = await userClient
     .from('profiles')
     .select('subscription_tier, scans_this_month')
@@ -71,7 +72,6 @@ Deno.serve(async (req) => {
     );
   }
 
-  // Download the uploaded photo from Storage.
   const { data: imageBlob, error: downloadError } = await userClient.storage
     .from('scan-images')
     .download(storagePath);
@@ -83,68 +83,61 @@ Deno.serve(async (req) => {
   const base64Image = await blobToBase64(imageBlob);
   const mediaType = mediaTypeForPath(storagePath);
 
-  let identification;
+  let result;
   try {
-    identification = await identifyItem({ base64Image, mediaType, textHint });
+    result = await identifyDiscovery({ base64Image, mediaType });
   } catch (error) {
     return jsonResponse(
-      { error: 'Item identification failed', details: error instanceof Error ? error.message : String(error) },
+      { error: 'Identification failed', details: error instanceof Error ? error.message : String(error) },
       { status: 502 }
     );
   }
 
-  // eBay sold comps + ROI (spec section 6 & 8). Failures here shouldn't block
-  // the identification result — they just leave pricing fields null (grade D).
+  // Cross-reference eBay sold comps for the identified item/material. For
+  // terrain or material photos, similarly-titled listings (e.g. "gold claim",
+  // "rockhounding site") are a useful qualitative signal even when there's no
+  // direct resale price — surfaced via similar_listings below.
   let roi;
+  let similarListings: string[] = [];
   try {
-    const { comps, activeListingCount } = await getComps(identification.search_query);
-    roi = computeRoi({
-      comps,
-      category: identification.category,
-      conditionEstimate: identification.condition_estimate,
-      activeListingCount,
-      purchasePrice,
-    });
+    const { comps, activeListingCount } = await getComps(result.search_query);
+    similarListings = comps.slice(0, 5).map((comp) => comp.title);
+    roi = computeRoi({ comps, category: result.category, activeListingCount });
   } catch (error) {
-    console.error('Comps/ROI pipeline failed', error);
-    roi = computeRoi({ comps: [], category: identification.category });
+    console.error('Comps pipeline failed for discovery', error);
+    roi = computeRoi({ comps: [], category: result.category });
   }
 
   const serviceClient = getServiceClient();
 
-  const { data: scan, error: insertError } = await serviceClient
-    .from('scans')
+  const { data: discovery, error: insertError } = await serviceClient
+    .from('discoveries')
     .insert({
       user_id: user.id,
       image_url: storagePath,
-      identified_name: identification.item_name,
-      identified_category: identification.category,
-      identified_attributes: {
-        brand: identification.brand,
-        model: identification.model,
-        part_number: identification.part_number,
-        condition_estimate: identification.condition_estimate,
-        search_query: identification.search_query,
-        notable_flaws: identification.notable_flaws,
-        id_confidence: identification.id_confidence,
-      },
+      latitude: latitude ?? null,
+      longitude: longitude ?? null,
+      captured_at: capturedAt ?? new Date().toISOString(),
+      identified_name: result.name,
+      identified_category: result.category,
+      description: result.description,
+      confidence_grade: result.confidence_grade,
       est_sale_price: roi.estSalePrice,
       est_sale_low: roi.estSaleLow,
       est_sale_high: roi.estSaleHigh,
       comps_count: roi.compsCount,
-      sell_through_days: roi.sellThroughDays,
-      confidence_grade: roi.confidenceGrade,
-      recommendation: roi.recommendation,
-      max_buy_price: roi.maxBuyPrice,
+      identified_attributes: {
+        notable_features: result.notable_features,
+        next_steps: result.next_steps,
+        search_query: result.search_query,
+        similar_listings: similarListings,
+      },
     })
     .select()
     .single();
 
-  if (insertError || !scan) {
-    return jsonResponse(
-      { error: 'Failed to save scan', details: insertError?.message },
-      { status: 500 }
-    );
+  if (insertError || !discovery) {
+    return jsonResponse({ error: 'Failed to save discovery', details: insertError?.message }, { status: 500 });
   }
 
   await serviceClient
@@ -152,12 +145,5 @@ Deno.serve(async (req) => {
     .update({ scans_this_month: profile.scans_this_month + 1 })
     .eq('id', user.id);
 
-  return jsonResponse(
-    {
-      scan,
-      identification,
-      roi: { net: roi.net, roiPct: roi.roiPct, fees: roi.fees, shippingCost: roi.shippingCost },
-    },
-    { status: 200 }
-  );
+  return jsonResponse({ discovery }, { status: 200 });
 });

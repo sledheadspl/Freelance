@@ -24,6 +24,14 @@ export interface CompListing {
   condition: string;
 }
 
+export interface DiscoveryAttributes {
+  notable_features?: string[];
+  next_steps?: string[];
+  search_query?: string;
+  similar_listings?: string[];
+  [key: string]: unknown;
+}
+
 export interface Database {
   public: {
     Tables: {
@@ -167,6 +175,48 @@ export interface Database {
           created_at?: string;
         };
         Update: Partial<Database['public']['Tables']['orders']['Insert']>;
+        Relationships: [];
+      };
+      discoveries: {
+        Row: {
+          id: string;
+          user_id: string;
+          image_url: string | null;
+          latitude: number | null;
+          longitude: number | null;
+          captured_at: string;
+          identified_name: string | null;
+          identified_category: string | null;
+          description: string | null;
+          confidence_grade: ConfidenceGrade | null;
+          identified_attributes: DiscoveryAttributes | null;
+          est_sale_price: number | null;
+          est_sale_low: number | null;
+          est_sale_high: number | null;
+          comps_count: number | null;
+          shared: boolean;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          user_id: string;
+          image_url?: string | null;
+          latitude?: number | null;
+          longitude?: number | null;
+          captured_at?: string;
+          identified_name?: string | null;
+          identified_category?: string | null;
+          description?: string | null;
+          confidence_grade?: ConfidenceGrade | null;
+          identified_attributes?: DiscoveryAttributes | null;
+          est_sale_price?: number | null;
+          est_sale_low?: number | null;
+          est_sale_high?: number | null;
+          comps_count?: number | null;
+          shared?: boolean;
+          created_at?: string;
+        };
+        Update: Partial<Database['public']['Tables']['discoveries']['Insert']>;
         Relationships: [];
       };
     };

@@ -14,6 +14,12 @@ listings to eBay via the Sell APIs, order polling with push notifications for
 sold items, a dashboard summarizing scan usage, inventory pipeline, and
 profit, and a Stripe-powered Pro subscription paywall.
 
+It also adds a **Discover mode**: a separate "identify anything" camera flow
+(rocks, wood, plants, terrain, and more) that GPS-tags each find, cross-
+references eBay sold comps for resale value where applicable, and builds a
+personal timeline of finds with an opt-in toggle to contribute to a future
+shared dataset.
+
 ## Stack
 
 - Expo (React Native) + TypeScript strict mode
@@ -25,20 +31,23 @@ profit, and a Stripe-powered Pro subscription paywall.
 ```
 app/                  expo-router routes
   (auth)/             sign-in / sign-up screens
-  (tabs)/             authenticated tab navigator (dashboard, scan, history,
-                       inventory, orders, settings)
+  (tabs)/             authenticated tab navigator (dashboard, scan, discover,
+                       history, finds, inventory, orders, settings)
   scan/[id]/          scan result screen
+  discovery/[id]/     Discover find result screen
   inventory/[id]/     listing draft screen
 src/
   contexts/           AuthContext (Supabase session state)
   lib/                Supabase client, scan upload + edge function helper,
                        shared scan display helpers (badges, formatting),
-                       inventory + listing draft helpers, orders helpers,
-                       push notification registration, dashboard stats
+                       discovery upload + edge function helper, inventory +
+                       listing draft helpers, orders helpers, push
+                       notification registration, dashboard stats
   types/              Database row types matching the Supabase schema
 supabase/migrations/  SQL schema + storage migrations
 supabase/functions/   Edge functions (Deno)
   scan/               Orchestrates identification, comps, and ROI
+  identify-discovery/ Identifies "anything" finds (Discover mode), with comps/ROI
   ebay-oauth-start/   Builds the eBay consent screen URL (auth required)
   ebay-oauth-callback/ Exchanges the OAuth code for tokens (public, no JWT)
   generate-listing/   Generates an eBay listing title/description with Claude
@@ -47,9 +56,11 @@ supabase/functions/   Edge functions (Deno)
   create-checkout-session/ Starts a Stripe Checkout session for the Pro plan (auth required)
   create-portal-session/   Starts a Stripe Billing Portal session (auth required)
   stripe-webhook/     Handles Stripe subscription events (public, no JWT)
-  _shared/            anthropic.ts (vision), comps.ts (eBay/Apify + cache),
-                       roi.ts (ROI math, unit tested), ebayOAuth.ts (Sell API OAuth),
-                       listing.ts (listing copy generation), ebaySell.ts /
+  _shared/            anthropic.ts (vision), discoveryIdentify.ts (Discover
+                       vision prompt), image.ts (shared image helpers),
+                       comps.ts (eBay/Apify + cache), roi.ts (ROI math, unit
+                       tested), ebayOAuth.ts (Sell API OAuth), listing.ts
+                       (listing copy generation), ebaySell.ts /
                        ebayCategory.ts (publish pipeline), ebayFulfillment.ts
                        (order polling), pushNotifications.ts (Expo push API),
                        stripe.ts (Checkout/Billing Portal/webhook verification)
@@ -100,6 +111,7 @@ supabase/functions/   Edge functions (Deno)
    supabase functions deploy create-checkout-session
    supabase functions deploy create-portal-session
    supabase functions deploy stripe-webhook
+   supabase functions deploy identify-discovery
    ```
 
 5. Start the app:
@@ -355,6 +367,45 @@ The free-tier scan cap (`FREE_TIER_MONTHLY_SCANS = 10`, enforced in the
 `/scan` Edge Function and shown on the Dashboard) only applies while
 `subscription_tier = 'free'`; Pro users have unlimited scans.
 
+## Discover mode
+
+Alongside the resale-focused Scan tab, FlipScanner has a separate **Discover**
+flow for identifying anything you come across — rocks/minerals, driftwood or
+branches with project potential, terrain that might indicate gold or other
+resources, plants, and more.
+
+1. The Discover tab (`app/(tabs)/discover.tsx`) opens the camera. After
+   capturing a photo, the app best-effort requests location permission and
+   GPS coordinates (`expo-location`) — Discover still works if location is
+   denied or unavailable.
+2. The photo is uploaded to the `scan-images` bucket under
+   `${user_id}/discoveries/...` and sent to the `identify-discovery` Edge
+   Function along with the optional GPS coordinates and capture time.
+3. `identify-discovery` (`supabase/functions/identify-discovery/index.ts`)
+   sends the image to Claude vision with a Discover-specific prompt
+   (`supabase/functions/_shared/discoveryIdentify.ts`), which returns a name,
+   category, description, an A-D confidence grade, notable features, and
+   suggested next steps to verify the identification (e.g. "check for
+   magnetism", "look for a maker's mark").
+4. The function also runs the same eBay sold-comps + ROI pipeline used by
+   `/scan` against the identification's search query, so finds with resale
+   value get an estimated sale price/range. The top sold-listing titles are
+   also stored as `similar_listings` — a qualitative cross-reference (e.g.
+   spotting "gold claim" listings for a similar riverbed setting), not
+   geological confirmation.
+5. The result is saved to the `discoveries` table and the app navigates to
+   `/discovery/[id]`, which shows the photo, identification, confidence
+   grade, notable features, next steps to verify, resale value (or "No resale
+   market found"), similar eBay listings, GPS coordinates, and a toggle to
+   opt the find into a future shared dataset (`discoveries.shared`).
+6. The Finds tab (`app/(tabs)/finds.tsx`) lists the user's Discover history,
+   newest first, highlighting finds with resale value (`~$X on eBay`) versus
+   those with none ("No resale market found").
+
+Discover shares the same monthly scan budget as the resale Scan flow
+(`profiles.scans_this_month`, capped at 10/month on the free tier).
+
 ## Build Order status
 
-All 12 Build Order steps from the FlipScanner spec are implemented.
+All 12 Build Order steps from the FlipScanner spec are implemented, plus the
+Discover mode described above.
