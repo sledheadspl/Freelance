@@ -3,14 +3,15 @@
 Mobile-first reseller app: scan items, get real eBay sold-comp pricing and an
 ROI-based buy/skip recommendation, then manage inventory and listings.
 
-This repo currently implements **Build Order steps 1-10**: project scaffold
+This repo currently implements **Build Order steps 1-11**: project scaffold
 (Expo + TypeScript strict mode), the Supabase database schema, Supabase
 email/password auth, the camera scan flow (capture → upload → Claude vision
 item identification → results screen), the eBay sold-comps + ROI pipeline
 that powers the buy/skip recommendation, a scan history / watchlist UI, the
 "I bought it" → inventory flow, the "Connect eBay" OAuth flow (sandbox), an
 AI-generated draft listing editor, publishing listings to eBay via the
-Sell APIs, and order polling with push notifications for sold items.
+Sell APIs, order polling with push notifications for sold items, and a
+dashboard summarizing scan usage, inventory pipeline, and profit.
 
 ## Stack
 
@@ -23,7 +24,8 @@ Sell APIs, and order polling with push notifications for sold items.
 ```
 app/                  expo-router routes
   (auth)/             sign-in / sign-up screens
-  (tabs)/             authenticated tab navigator (scan, history, inventory, orders, settings)
+  (tabs)/             authenticated tab navigator (dashboard, scan, history,
+                       inventory, orders, settings)
   scan/[id]/          scan result screen
   inventory/[id]/     listing draft screen
 src/
@@ -31,7 +33,7 @@ src/
   lib/                Supabase client, scan upload + edge function helper,
                        shared scan display helpers (badges, formatting),
                        inventory + listing draft helpers, orders helpers,
-                       push notification registration
+                       push notification registration, dashboard stats
   types/              Database row types matching the Supabase schema
 supabase/migrations/  SQL schema + storage migrations
 supabase/functions/   Edge functions (Deno)
@@ -300,6 +302,22 @@ In production, `sync-orders` should also be invoked periodically (e.g. via
 `pg_cron` + `pg_net`, or an external scheduler) for each connected user so
 sold notifications arrive without the user opening the app.
 
+## Dashboard (step 11)
+
+The Dashboard tab (`app/(tabs)/dashboard.tsx`) is the app's home screen and
+summarizes the user's reselling activity via `getDashboardStats()`
+(`src/lib/dashboard.ts`):
+
+- **This month**: scans used this month vs. the free-tier limit (10), and the
+  current subscription plan (Free/Pro).
+- **Inventory pipeline**: counts of inventory items by status (unlisted,
+  listed, sold, shipped).
+- **Orders**: number of orders awaiting shipment.
+- **Profit**: total spent on inventory, total revenue from sold items, and net
+  profit (revenue minus the purchase cost of sold items).
+
+Pull-to-refresh re-fetches all stats.
+
 ## Next steps (Build Order)
 
-See the FlipScanner spec for the full plan. Step 11 (dashboard) is next.
+See the FlipScanner spec for the full plan. Step 12 (Stripe paywall) is next.
