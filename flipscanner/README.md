@@ -3,11 +3,12 @@
 Mobile-first reseller app: scan items, get real eBay sold-comp pricing and an
 ROI-based buy/skip recommendation, then manage inventory and listings.
 
-This repo currently implements **Build Order steps 1-5**: project scaffold
+This repo currently implements **Build Order steps 1-6**: project scaffold
 (Expo + TypeScript strict mode), the Supabase database schema, Supabase
 email/password auth, the camera scan flow (capture → upload → Claude vision
 item identification → results screen), the eBay sold-comps + ROI pipeline
-that powers the buy/skip recommendation, and a scan history / watchlist UI.
+that powers the buy/skip recommendation, a scan history / watchlist UI, and
+the "I bought it" → inventory flow.
 
 ## Stack
 
@@ -20,12 +21,13 @@ that powers the buy/skip recommendation, and a scan history / watchlist UI.
 ```
 app/                  expo-router routes
   (auth)/             sign-in / sign-up screens
-  (tabs)/             authenticated tab navigator (scan, history, settings)
+  (tabs)/             authenticated tab navigator (scan, history, inventory, settings)
   scan/[id]/          scan result screen
 src/
   contexts/           AuthContext (Supabase session state)
   lib/                Supabase client, scan upload + edge function helper,
-                       shared scan display helpers (badges, formatting)
+                       shared scan display helpers (badges, formatting),
+                       inventory helpers
   types/              Database row types matching the Supabase schema
 supabase/migrations/  SQL schema + storage migrations
 supabase/functions/   Edge functions (Deno)
@@ -158,7 +160,20 @@ item name/category, confidence grade, recommendation badge, estimated sale
 price, and a relative timestamp. Pull-to-refresh re-fetches the list; tapping
 a row opens `/scan/[id]`.
 
+## Inventory flow (step 6)
+
+On the scan result screen (`app/scan/[id].tsx`), an "I Bought It" button
+reveals a purchase-price field (pre-filled from `max_buy_price` when
+available); submitting it inserts a row into `inventory` linking the scan to
+the signed-in user. If the scan is already in inventory, the screen shows the
+purchase price instead of the button.
+
+The Inventory tab (`app/(tabs)/inventory.tsx`) lists the user's inventory,
+newest first, joined with the originating scan for a thumbnail, item name,
+category, purchase price, and status badge (unlisted/listed/sold/shipped).
+Tapping a row opens `/scan/[id]`.
+
 ## Next steps (Build Order)
 
-See the FlipScanner spec for the full plan. Step 6 ("I bought it" → inventory
-flow) is next.
+See the FlipScanner spec for the full plan. Step 7 (eBay OAuth connect flow,
+sandbox) is next.
