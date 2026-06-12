@@ -3,14 +3,14 @@
 Mobile-first reseller app: scan items, get real eBay sold-comp pricing and an
 ROI-based buy/skip recommendation, then manage inventory and listings.
 
-This repo currently implements **Build Order steps 1-9**: project scaffold
+This repo currently implements **Build Order steps 1-10**: project scaffold
 (Expo + TypeScript strict mode), the Supabase database schema, Supabase
 email/password auth, the camera scan flow (capture → upload → Claude vision
 item identification → results screen), the eBay sold-comps + ROI pipeline
 that powers the buy/skip recommendation, a scan history / watchlist UI, the
 "I bought it" → inventory flow, the "Connect eBay" OAuth flow (sandbox), an
-AI-generated draft listing editor, and publishing listings to eBay via the
-Sell APIs.
+AI-generated draft listing editor, publishing listings to eBay via the
+Sell APIs, and order polling with push notifications for sold items.
 
 ## Stack
 
@@ -23,14 +23,15 @@ Sell APIs.
 ```
 app/                  expo-router routes
   (auth)/             sign-in / sign-up screens
-  (tabs)/             authenticated tab navigator (scan, history, inventory, settings)
+  (tabs)/             authenticated tab navigator (scan, history, inventory, orders, settings)
   scan/[id]/          scan result screen
   inventory/[id]/     listing draft screen
 src/
   contexts/           AuthContext (Supabase session state)
   lib/                Supabase client, scan upload + edge function helper,
                        shared scan display helpers (badges, formatting),
-                       inventory + listing draft helpers
+                       inventory + listing draft helpers, orders helpers,
+                       push notification registration
   types/              Database row types matching the Supabase schema
 supabase/migrations/  SQL schema + storage migrations
 supabase/functions/   Edge functions (Deno)
@@ -39,10 +40,12 @@ supabase/functions/   Edge functions (Deno)
   ebay-oauth-callback/ Exchanges the OAuth code for tokens (public, no JWT)
   generate-listing/   Generates an eBay listing title/description with Claude
   publish-listing/    Publishes a listing draft via the eBay Sell APIs
+  sync-orders/        Polls eBay for new sales and syncs them into orders/inventory
   _shared/            anthropic.ts (vision), comps.ts (eBay/Apify + cache),
                        roi.ts (ROI math, unit tested), ebayOAuth.ts (Sell API OAuth),
                        listing.ts (listing copy generation), ebaySell.ts /
-                       ebayCategory.ts (publish pipeline)
+                       ebayCategory.ts (publish pipeline), ebayFulfillment.ts
+                       (order polling), pushNotifications.ts (Expo push API)
 ```
 
 ## Getting started
@@ -84,6 +87,7 @@ supabase/functions/   Edge functions (Deno)
    supabase functions deploy ebay-oauth-callback
    supabase functions deploy generate-listing
    supabase functions deploy publish-listing
+   supabase functions deploy sync-orders
    ```
 
 5. Start the app:
@@ -266,7 +270,36 @@ passed via `EBAY_MERCHANT_LOCATION_KEY`, `EBAY_FULFILLMENT_POLICY_ID`,
 publishing fails with a clear configuration error rather than a partial
 listing.
 
+## Order polling + push notifications (step 10)
+
+The Orders tab (`app/(tabs)/orders.tsx`) lists the user's `orders`, newest
+first, with the sold item's thumbnail/name, buyer username, sale price, ship-
+by date, and a status badge (awaiting shipment/shipped/delivered/cancelled).
+
+Pull-to-refresh calls the `sync-orders` Edge Function, which:
+
+1. Exchanges the stored eBay refresh token for an access token (skipping
+   silently if eBay isn't connected).
+2. Calls the Fulfillment API for unfulfilled orders and matches each line
+   item's SKU back to a `listed` inventory row (SKUs are the inventory row
+   id, set when publishing in step 9).
+3. For each newly-matched sale, inserts an `orders` row
+   (`status = 'awaiting_shipment'`, buyer username, ship-by date) and updates
+   the inventory row to `status = 'sold'` with `sold_price` / `sold_at`.
+4. If any new sales were found and the user has a registered push token,
+   sends an "Item sold!" notification via the Expo push API
+   (`supabase/functions/_shared/pushNotifications.ts`).
+
+On sign-in, `app/(tabs)/_layout.tsx` calls
+`registerForPushNotifications()` (`src/lib/notifications.ts`), which requests
+notification permission, gets an Expo push token via `expo-notifications`,
+and stores it on `profiles.push_token`. This is a no-op on web or in
+environments without a configured push project.
+
+In production, `sync-orders` should also be invoked periodically (e.g. via
+`pg_cron` + `pg_net`, or an external scheduler) for each connected user so
+sold notifications arrive without the user opening the app.
+
 ## Next steps (Build Order)
 
-See the FlipScanner spec for the full plan. Step 10 (order polling + push
-notifications) is next.
+See the FlipScanner spec for the full plan. Step 11 (dashboard) is next.

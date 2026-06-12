@@ -32,6 +32,7 @@ export interface Database {
           id: string;
           ebay_connected: boolean;
           ebay_refresh_token: string | null;
+          push_token: string | null;
           subscription_tier: SubscriptionTier;
           scans_this_month: number;
           created_at: string;
@@ -40,6 +41,7 @@ export interface Database {
           id: string;
           ebay_connected?: boolean;
           ebay_refresh_token?: string | null;
+          push_token?: string | null;
           subscription_tier?: SubscriptionTier;
           scans_this_month?: number;
           created_at?: string;
