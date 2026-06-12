@@ -2,12 +2,17 @@ import { useCallback, useEffect, useState } from 'react';
 import { ActivityIndicator, Alert, Pressable, StyleSheet, Text, View } from 'react-native';
 
 import { useAuth } from '../../src/contexts/AuthContext';
+import { openBillingPortal, startProCheckout } from '../../src/lib/billing';
 import { connectEbayAccount, getEbayConnected } from '../../src/lib/ebay';
+import { supabase } from '../../src/lib/supabase';
+import type { SubscriptionTier } from '../../src/types/database';
 
 export default function Settings() {
   const { session, signOut } = useAuth();
   const [ebayConnected, setEbayConnected] = useState<boolean | null>(null);
   const [connecting, setConnecting] = useState(false);
+  const [subscriptionTier, setSubscriptionTier] = useState<SubscriptionTier | null>(null);
+  const [billingLoading, setBillingLoading] = useState(false);
 
   const refreshEbayStatus = useCallback(async () => {
     if (!session) return;
@@ -18,9 +23,22 @@ export default function Settings() {
     }
   }, [session]);
 
+  const refreshSubscription = useCallback(async () => {
+    if (!session) return;
+    const { data, error } = await supabase
+      .from('profiles')
+      .select('subscription_tier')
+      .eq('id', session.user.id)
+      .single();
+    if (!error && data) {
+      setSubscriptionTier(data.subscription_tier);
+    }
+  }, [session]);
+
   useEffect(() => {
     refreshEbayStatus();
-  }, [refreshEbayStatus]);
+    refreshSubscription();
+  }, [refreshEbayStatus, refreshSubscription]);
 
   async function handleConnectEbay() {
     setConnecting(true);
@@ -34,10 +52,64 @@ export default function Settings() {
     }
   }
 
+  async function handleUpgrade() {
+    setBillingLoading(true);
+    try {
+      await startProCheckout();
+      await refreshSubscription();
+    } catch (err) {
+      Alert.alert('Error', err instanceof Error ? err.message : 'Failed to start checkout.');
+    } finally {
+      setBillingLoading(false);
+    }
+  }
+
+  async function handleManageBilling() {
+    setBillingLoading(true);
+    try {
+      await openBillingPortal();
+      await refreshSubscription();
+    } catch (err) {
+      Alert.alert('Error', err instanceof Error ? err.message : 'Failed to open billing portal.');
+    } finally {
+      setBillingLoading(false);
+    }
+  }
+
   return (
     <View style={styles.container}>
       <Text style={styles.title}>Settings</Text>
       <Text style={styles.subtitle}>{session?.user.email}</Text>
+
+      <View style={styles.section}>
+        <Text style={styles.sectionTitle}>Subscription</Text>
+        <Text style={styles.subscriptionStatus}>{subscriptionTier === 'pro' ? 'Pro' : 'Free'} plan</Text>
+        {subscriptionTier === 'pro' ? (
+          <Pressable
+            style={[styles.button, styles.ebayButton]}
+            onPress={handleManageBilling}
+            disabled={billingLoading}
+          >
+            {billingLoading ? (
+              <ActivityIndicator color="#fff" />
+            ) : (
+              <Text style={styles.buttonText}>Manage Subscription</Text>
+            )}
+          </Pressable>
+        ) : (
+          <Pressable
+            style={[styles.button, styles.ebayButton]}
+            onPress={handleUpgrade}
+            disabled={billingLoading}
+          >
+            {billingLoading ? (
+              <ActivityIndicator color="#fff" />
+            ) : (
+              <Text style={styles.buttonText}>Upgrade to Pro</Text>
+            )}
+          </Pressable>
+        )}
+      </View>
 
       <View style={styles.section}>
         <Text style={styles.sectionTitle}>eBay account</Text>
@@ -94,6 +166,10 @@ const styles = StyleSheet.create({
   connected: {
     color: '#1a7f37',
     fontWeight: '600',
+  },
+  subscriptionStatus: {
+    fontWeight: '600',
+    marginBottom: 12,
   },
   button: {
     borderRadius: 8,

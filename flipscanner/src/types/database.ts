@@ -34,6 +34,8 @@ export interface Database {
           ebay_refresh_token: string | null;
           push_token: string | null;
           subscription_tier: SubscriptionTier;
+          stripe_customer_id: string | null;
+          stripe_subscription_id: string | null;
           scans_this_month: number;
           created_at: string;
         };
@@ -43,6 +45,8 @@ export interface Database {
           ebay_refresh_token?: string | null;
           push_token?: string | null;
           subscription_tier?: SubscriptionTier;
+          stripe_customer_id?: string | null;
+          stripe_subscription_id?: string | null;
           scans_this_month?: number;
           created_at?: string;
         };

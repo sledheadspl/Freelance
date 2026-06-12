@@ -3,15 +3,16 @@
 Mobile-first reseller app: scan items, get real eBay sold-comp pricing and an
 ROI-based buy/skip recommendation, then manage inventory and listings.
 
-This repo currently implements **Build Order steps 1-11**: project scaffold
-(Expo + TypeScript strict mode), the Supabase database schema, Supabase
-email/password auth, the camera scan flow (capture → upload → Claude vision
-item identification → results screen), the eBay sold-comps + ROI pipeline
-that powers the buy/skip recommendation, a scan history / watchlist UI, the
-"I bought it" → inventory flow, the "Connect eBay" OAuth flow (sandbox), an
-AI-generated draft listing editor, publishing listings to eBay via the
-Sell APIs, order polling with push notifications for sold items, and a
-dashboard summarizing scan usage, inventory pipeline, and profit.
+This repo currently implements **Build Order steps 1-12** (the full Build
+Order): project scaffold (Expo + TypeScript strict mode), the Supabase
+database schema, Supabase email/password auth, the camera scan flow (capture
+→ upload → Claude vision item identification → results screen), the eBay
+sold-comps + ROI pipeline that powers the buy/skip recommendation, a scan
+history / watchlist UI, the "I bought it" → inventory flow, the "Connect eBay"
+OAuth flow (sandbox), an AI-generated draft listing editor, publishing
+listings to eBay via the Sell APIs, order polling with push notifications for
+sold items, a dashboard summarizing scan usage, inventory pipeline, and
+profit, and a Stripe-powered Pro subscription paywall.
 
 ## Stack
 
@@ -43,11 +44,15 @@ supabase/functions/   Edge functions (Deno)
   generate-listing/   Generates an eBay listing title/description with Claude
   publish-listing/    Publishes a listing draft via the eBay Sell APIs
   sync-orders/        Polls eBay for new sales and syncs them into orders/inventory
+  create-checkout-session/ Starts a Stripe Checkout session for the Pro plan (auth required)
+  create-portal-session/   Starts a Stripe Billing Portal session (auth required)
+  stripe-webhook/     Handles Stripe subscription events (public, no JWT)
   _shared/            anthropic.ts (vision), comps.ts (eBay/Apify + cache),
                        roi.ts (ROI math, unit tested), ebayOAuth.ts (Sell API OAuth),
                        listing.ts (listing copy generation), ebaySell.ts /
                        ebayCategory.ts (publish pipeline), ebayFulfillment.ts
-                       (order polling), pushNotifications.ts (Expo push API)
+                       (order polling), pushNotifications.ts (Expo push API),
+                       stripe.ts (Checkout/Billing Portal/webhook verification)
 ```
 
 ## Getting started
@@ -84,12 +89,17 @@ supabase/functions/   Edge functions (Deno)
    # Required to publish listings — see "Publish to eBay" below.
    supabase secrets set EBAY_MERCHANT_LOCATION_KEY=... EBAY_FULFILLMENT_POLICY_ID=... \
      EBAY_PAYMENT_POLICY_ID=... EBAY_RETURN_POLICY_ID=...
+   # Required for the "Upgrade to Pro" flow — see "Stripe paywall" below.
+   supabase secrets set STRIPE_SECRET_KEY=... STRIPE_PRO_PRICE_ID=... STRIPE_WEBHOOK_SECRET=...
    supabase functions deploy scan
    supabase functions deploy ebay-oauth-start
    supabase functions deploy ebay-oauth-callback
    supabase functions deploy generate-listing
    supabase functions deploy publish-listing
    supabase functions deploy sync-orders
+   supabase functions deploy create-checkout-session
+   supabase functions deploy create-portal-session
+   supabase functions deploy stripe-webhook
    ```
 
 5. Start the app:
@@ -156,6 +166,9 @@ npm test
 | `EBAY_ENV` | Supabase Edge Functions only | `sandbox` (default) or `production` — selects the eBay OAuth/API base URLs |
 | `EBAY_OAUTH_REDIRECT_URI` | Supabase Edge Functions only | eBay "Your auth accepted URL" (RuName) — must point at the deployed `ebay-oauth-callback` function URL |
 | `EBAY_OAUTH_STATE_SECRET` | Supabase Edge Functions only | Random secret used to sign the OAuth `state` parameter (e.g. `openssl rand -hex 32`) |
+| `STRIPE_SECRET_KEY` | Supabase Edge Functions only | Stripe secret API key, used by `create-checkout-session` / `create-portal-session` / `stripe-webhook` |
+| `STRIPE_PRO_PRICE_ID` | Supabase Edge Functions only | The Stripe Price id for the Pro subscription, used by `create-checkout-session` |
+| `STRIPE_WEBHOOK_SECRET` | Supabase Edge Functions only | Signing secret for the `stripe-webhook` endpoint (from the Stripe Dashboard or `stripe listen`) |
 
 ### Registering for the Anthropic API key
 
@@ -318,6 +331,30 @@ summarizes the user's reselling activity via `getDashboardStats()`
 
 Pull-to-refresh re-fetches all stats.
 
-## Next steps (Build Order)
+## Stripe paywall (step 12)
 
-See the FlipScanner spec for the full plan. Step 12 (Stripe paywall) is next.
+The Settings tab's "Subscription" section shows the user's current plan
+(Free/Pro) and lets them upgrade or manage billing:
+
+1. "Upgrade to Pro" calls the `create-checkout-session` Edge Function, which
+   finds or creates a Stripe customer for the signed-in user (storing
+   `profiles.stripe_customer_id`) and starts a Stripe Checkout session for
+   the `STRIPE_PRO_PRICE_ID` subscription price. The app opens the checkout
+   URL via `expo-web-browser`, returning to `flipscanner://billing-callback`.
+2. "Manage Subscription" (shown once the user is on the Pro plan) calls
+   `create-portal-session`, which opens the Stripe Billing Portal so the user
+   can update payment methods or cancel.
+3. The public `stripe-webhook` Edge Function (`verify_jwt = false`, verified
+   via the `Stripe-Signature` header and `STRIPE_WEBHOOK_SECRET`) handles
+   `checkout.session.completed`, `customer.subscription.updated`/`created`,
+   and `customer.subscription.deleted` events, keeping
+   `profiles.subscription_tier` and `profiles.stripe_subscription_id` in sync
+   with Stripe.
+
+The free-tier scan cap (`FREE_TIER_MONTHLY_SCANS = 10`, enforced in the
+`/scan` Edge Function and shown on the Dashboard) only applies while
+`subscription_tier = 'free'`; Pro users have unlimited scans.
+
+## Build Order status
+
+All 12 Build Order steps from the FlipScanner spec are implemented.
