@@ -3,12 +3,15 @@ import { z } from 'npm:zod@^4';
 import { corsHeaders, jsonResponse } from '../_shared/cors.ts';
 import { getServiceClient, getUserClient } from '../_shared/supabaseClient.ts';
 import { identifyItem } from '../_shared/anthropic.ts';
+import { getComps } from '../_shared/comps.ts';
+import { computeRoi } from '../_shared/roi.ts';
 
 const FREE_TIER_MONTHLY_SCANS = 10;
 
 const requestSchema = z.object({
   storagePath: z.string().min(1),
   textHint: z.string().max(500).optional(),
+  purchasePrice: z.number().positive().optional(),
 });
 
 function mediaTypeForPath(path: string): string {
@@ -66,7 +69,7 @@ Deno.serve(async (req) => {
   if (!parsedBody.success) {
     return jsonResponse({ error: 'Invalid request', details: parsedBody.error.flatten() }, { status: 400 });
   }
-  const { storagePath, textHint } = parsedBody.data;
+  const { storagePath, textHint, purchasePrice } = parsedBody.data;
 
   if (!storagePath.startsWith(`${user.id}/`)) {
     return jsonResponse({ error: 'storagePath must be within your own folder' }, { status: 403 });
@@ -112,6 +115,23 @@ Deno.serve(async (req) => {
     );
   }
 
+  // eBay sold comps + ROI (spec section 6 & 8). Failures here shouldn't block
+  // the identification result — they just leave pricing fields null (grade D).
+  let roi;
+  try {
+    const { comps, activeListingCount } = await getComps(identification.search_query);
+    roi = computeRoi({
+      comps,
+      category: identification.category,
+      conditionEstimate: identification.condition_estimate,
+      activeListingCount,
+      purchasePrice,
+    });
+  } catch (error) {
+    console.error('Comps/ROI pipeline failed', error);
+    roi = computeRoi({ comps: [], category: identification.category });
+  }
+
   const serviceClient = getServiceClient();
 
   const { data: scan, error: insertError } = await serviceClient
@@ -130,6 +150,14 @@ Deno.serve(async (req) => {
         notable_flaws: identification.notable_flaws,
         id_confidence: identification.id_confidence,
       },
+      est_sale_price: roi.estSalePrice,
+      est_sale_low: roi.estSaleLow,
+      est_sale_high: roi.estSaleHigh,
+      comps_count: roi.compsCount,
+      sell_through_days: roi.sellThroughDays,
+      confidence_grade: roi.confidenceGrade,
+      recommendation: roi.recommendation,
+      max_buy_price: roi.maxBuyPrice,
     })
     .select()
     .single();
@@ -146,5 +174,12 @@ Deno.serve(async (req) => {
     .update({ scans_this_month: profile.scans_this_month + 1 })
     .eq('id', user.id);
 
-  return jsonResponse({ scan, identification }, { status: 200 });
+  return jsonResponse(
+    {
+      scan,
+      identification,
+      roi: { net: roi.net, roiPct: roi.roiPct, fees: roi.fees, shippingCost: roi.shippingCost },
+    },
+    { status: 200 }
+  );
 });

@@ -15,6 +15,30 @@ const CONDITION_LABELS: Record<string, string> = {
   parts_only: 'Parts Only',
 };
 
+const GRADE_COLORS: Record<string, string> = {
+  A: '#1a7f37',
+  B: '#2f6feb',
+  C: '#9a6700',
+  D: '#999',
+};
+
+const RECOMMENDATION_LABELS: Record<string, string> = {
+  buy: 'BUY',
+  maybe: 'MAYBE',
+  skip: 'SKIP',
+};
+
+const RECOMMENDATION_COLORS: Record<string, string> = {
+  buy: '#1a7f37',
+  maybe: '#9a6700',
+  skip: '#cf222e',
+};
+
+function formatCurrency(value: number | null): string {
+  if (value == null) return '—';
+  return `$${value.toFixed(2)}`;
+}
+
 export default function ScanResult() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const [scan, setScan] = useState<ScanRow | null>(null);
@@ -120,10 +144,37 @@ export default function ScanResult() {
       ) : null}
 
       <View style={styles.section}>
-        <Text style={styles.sectionTitle}>Pricing & ROI</Text>
-        <Text style={styles.placeholder}>
-          eBay comps and a buy/skip recommendation are coming in the next build step.
-        </Text>
+        <View style={styles.pricingHeader}>
+          <Text style={styles.sectionTitle}>Pricing & ROI</Text>
+          <View style={[styles.gradeBadge, { backgroundColor: GRADE_COLORS[scan.confidence_grade ?? 'D'] }]}>
+            <Text style={styles.gradeBadgeText}>{scan.confidence_grade ?? 'D'}</Text>
+          </View>
+        </View>
+
+        {scan.recommendation ? (
+          <View
+            style={[styles.recommendationBadge, { backgroundColor: RECOMMENDATION_COLORS[scan.recommendation] }]}
+          >
+            <Text style={styles.recommendationText}>{RECOMMENDATION_LABELS[scan.recommendation]}</Text>
+          </View>
+        ) : null}
+
+        {scan.comps_count === 0 ? (
+          <Text style={styles.placeholder}>
+            Not enough eBay sold comps found yet for &ldquo;{attributes.search_query ?? scan.identified_name}
+            &rdquo;. Try a closer photo of any brand, model, or part number labels.
+          </Text>
+        ) : (
+          <>
+            <DetailRow label="Est. Sale Price" value={formatCurrency(scan.est_sale_price)} />
+            <DetailRow
+              label="Price Range"
+              value={`${formatCurrency(scan.est_sale_low)} – ${formatCurrency(scan.est_sale_high)}`}
+            />
+            <DetailRow label="Based on" value={`${scan.comps_count} sold comps`} />
+            <DetailRow label="Buy if under" value={formatCurrency(scan.max_buy_price)} />
+          </>
+        )}
       </View>
     </ScrollView>
   );
@@ -209,5 +260,34 @@ const styles = StyleSheet.create({
   },
   placeholder: {
     color: '#666',
+  },
+  pricingHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: 8,
+  },
+  gradeBadge: {
+    width: 28,
+    height: 28,
+    borderRadius: 14,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  gradeBadgeText: {
+    color: '#fff',
+    fontWeight: '700',
+  },
+  recommendationBadge: {
+    alignSelf: 'flex-start',
+    borderRadius: 6,
+    paddingVertical: 4,
+    paddingHorizontal: 10,
+    marginBottom: 12,
+  },
+  recommendationText: {
+    color: '#fff',
+    fontWeight: '700',
+    letterSpacing: 1,
   },
 });

@@ -3,10 +3,11 @@
 Mobile-first reseller app: scan items, get real eBay sold-comp pricing and an
 ROI-based buy/skip recommendation, then manage inventory and listings.
 
-This repo currently implements **Build Order steps 1-3**: project scaffold
+This repo currently implements **Build Order steps 1-4**: project scaffold
 (Expo + TypeScript strict mode), the Supabase database schema, Supabase
-email/password auth, and the camera scan flow (capture → upload → Claude
-vision item identification → results screen).
+email/password auth, the camera scan flow (capture → upload → Claude vision
+item identification → results screen), and the eBay sold-comps + ROI pipeline
+that powers the buy/skip recommendation.
 
 ## Stack
 
@@ -26,7 +27,10 @@ src/
   lib/                Supabase client, scan upload + edge function helper
   types/              Database row types matching the Supabase schema
 supabase/migrations/  SQL schema + storage migrations
-supabase/functions/   Edge functions (Deno) — /scan: Claude vision item ID
+supabase/functions/   Edge functions (Deno)
+  scan/               Orchestrates identification, comps, and ROI
+  _shared/            anthropic.ts (vision), comps.ts (eBay/Apify + cache),
+                       roi.ts (ROI math, unit tested)
 ```
 
 ## Getting started
@@ -51,11 +55,13 @@ supabase/functions/   Edge functions (Deno) — /scan: Claude vision item ID
    supabase db push
    ```
 
-4. Set the Claude vision API key as an Edge Function secret and deploy the
-   `/scan` function:
+4. Set Edge Function secrets and deploy the `/scan` function:
 
    ```sh
    supabase secrets set ANTHROPIC_API_KEY=sk-ant-...
+   # Optional — see "Registering for eBay developer access" below.
+   supabase secrets set EBAY_CLIENT_ID=... EBAY_CLIENT_SECRET=...
+   supabase secrets set APIFY_TOKEN=... APIFY_SOLD_LISTINGS_ACTOR_ID=...
    supabase functions deploy scan
    ```
 
@@ -83,7 +89,33 @@ created automatically via a database trigger.
    low-confidence banner prompts the user to retake the photo.
 
 Free-tier users are capped at 10 scans/month, enforced server-side in the
-edge function. Pricing/ROI (comps pipeline) is the next build step.
+edge function. The preview screen also has an optional "asking price" field —
+if set, it's sent along with the scan and used to compute ROI %, net profit,
+and the buy/maybe/skip recommendation.
+
+## Comps + ROI pipeline (step 4)
+
+After identification, `/scan` calls `getComps()` (`supabase/functions/_shared/comps.ts`):
+
+1. Checks `comps_cache` for a fresh (< 24h) entry for the normalized search query.
+2. If stale/missing, fetches sold comps via an Apify eBay sold-listings actor
+   (`APIFY_TOKEN` / `APIFY_SOLD_LISTINGS_ACTOR_ID`) and active listing count via
+   the eBay Browse API (`EBAY_CLIENT_ID` / `EBAY_CLIENT_SECRET`), then caches
+   the comps.
+3. If neither is configured, comps are empty and the scan gets confidence
+   grade `D` ("insufficient data") with null pricing — the app still works,
+   just without pricing until eBay/Apify credentials are added.
+
+`computeRoi()` (`supabase/functions/_shared/roi.ts`) implements spec section 6:
+filters comps by condition class, removes outliers with a 1.5×IQR fence,
+computes the median sale price, eBay fees, a category-based shipping
+estimate, the A–D confidence grade, `max_buy_price` ("buy if under $X"), and
+— when an asking price is provided — ROI %, net profit, and a buy/maybe/skip
+recommendation. This module is pure TypeScript with unit tests:
+
+```sh
+npm test
+```
 
 ## Environment variables
 
@@ -92,8 +124,8 @@ edge function. Pricing/ROI (comps pipeline) is the next build step.
 | `EXPO_PUBLIC_SUPABASE_URL` | App | Public, safe to bundle |
 | `EXPO_PUBLIC_SUPABASE_ANON_KEY` | App | Public, safe to bundle (RLS enforced) |
 | `ANTHROPIC_API_KEY` | Supabase Edge Functions only | Used by the `/scan` function for Claude vision item ID. Never put this in the app. |
-| `EBAY_CLIENT_ID` / `EBAY_CLIENT_SECRET` | Supabase Edge Functions only | eBay Browse API / Sell API credentials |
-| `APIFY_TOKEN` | Supabase Edge Functions only | Fallback sold-comps scraper |
+| `EBAY_CLIENT_ID` / `EBAY_CLIENT_SECRET` | Supabase Edge Functions only | eBay Browse API (active listing counts) / Sell API credentials |
+| `APIFY_TOKEN` / `APIFY_SOLD_LISTINGS_ACTOR_ID` | Supabase Edge Functions only | Fallback sold-comps scraper used by `/scan` |
 
 ### Registering for the Anthropic API key
 
@@ -118,5 +150,5 @@ edge function. Pricing/ROI (comps pipeline) is the next build step.
 
 ## Next steps (Build Order)
 
-See the FlipScanner spec for the full plan. Step 4 (eBay comps pipeline +
-ROI calculator) and step 5 (scan history / watchlist UI) are next.
+See the FlipScanner spec for the full plan. Step 5 (scan history / watchlist
+UI) is next.

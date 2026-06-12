@@ -5,9 +5,12 @@ import {
   ActivityIndicator,
   Alert,
   Image,
+  KeyboardAvoidingView,
+  Platform,
   Pressable,
   StyleSheet,
   Text,
+  TextInput,
   View,
 } from 'react-native';
 
@@ -20,6 +23,7 @@ export default function Scan() {
   const [permission, requestPermission] = useCameraPermissions();
   const cameraRef = useRef<CameraView>(null);
   const [photoUri, setPhotoUri] = useState<string | null>(null);
+  const [askingPrice, setAskingPrice] = useState('');
   const [submitting, setSubmitting] = useState(false);
 
   if (!permission) {
@@ -44,16 +48,24 @@ export default function Scan() {
     }
   };
 
-  const retake = () => setPhotoUri(null);
+  const retake = () => {
+    setPhotoUri(null);
+    setAskingPrice('');
+  };
 
   const usePhoto = async () => {
     if (!photoUri || !session) return;
 
+    const purchasePrice = Number(askingPrice);
+
     setSubmitting(true);
     try {
       const storagePath = await uploadScanImage(session.user.id, photoUri);
-      const scan = await requestScan(storagePath);
+      const scan = await requestScan(storagePath, {
+        purchasePrice: askingPrice && Number.isFinite(purchasePrice) && purchasePrice > 0 ? purchasePrice : undefined,
+      });
       setPhotoUri(null);
+      setAskingPrice('');
       router.push(`/scan/${scan.id}`);
     } catch (error) {
       Alert.alert('Scan failed', error instanceof Error ? error.message : String(error));
@@ -69,17 +81,30 @@ export default function Scan() {
         {submitting ? (
           <View style={styles.overlay}>
             <ActivityIndicator color="#fff" size="large" />
-            <Text style={styles.overlayText}>Identifying item...</Text>
+            <Text style={styles.overlayText}>Identifying item & checking prices...</Text>
           </View>
         ) : (
-          <View style={styles.previewActions}>
-            <Pressable style={[styles.button, styles.secondaryButton]} onPress={retake}>
-              <Text style={styles.buttonText}>Retake</Text>
-            </Pressable>
-            <Pressable style={styles.button} onPress={usePhoto}>
-              <Text style={styles.buttonText}>Use Photo</Text>
-            </Pressable>
-          </View>
+          <KeyboardAvoidingView
+            style={styles.previewBar}
+            behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+          >
+            <TextInput
+              style={styles.priceInput}
+              placeholder="Asking price (optional)"
+              placeholderTextColor="#ccc"
+              keyboardType="decimal-pad"
+              value={askingPrice}
+              onChangeText={setAskingPrice}
+            />
+            <View style={styles.previewActions}>
+              <Pressable style={[styles.button, styles.secondaryButton]} onPress={retake}>
+                <Text style={styles.buttonText}>Retake</Text>
+              </Pressable>
+              <Pressable style={styles.button} onPress={usePhoto}>
+                <Text style={styles.buttonText}>Use Photo</Text>
+              </Pressable>
+            </View>
+          </KeyboardAvoidingView>
         )}
       </View>
     );
@@ -128,11 +153,27 @@ const styles = StyleSheet.create({
     borderColor: '#fff',
     backgroundColor: 'rgba(255,255,255,0.3)',
   },
-  previewActions: {
+  previewBar: {
     position: 'absolute',
     bottom: 36,
     left: 0,
     right: 0,
+    alignItems: 'center',
+    gap: 12,
+    paddingHorizontal: 24,
+  },
+  priceInput: {
+    width: '100%',
+    backgroundColor: 'rgba(0,0,0,0.5)',
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.4)',
+    borderRadius: 8,
+    paddingVertical: 10,
+    paddingHorizontal: 12,
+    color: '#fff',
+    fontSize: 16,
+  },
+  previewActions: {
     flexDirection: 'row',
     justifyContent: 'center',
     gap: 16,

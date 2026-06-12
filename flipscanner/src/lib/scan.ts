@@ -25,10 +25,15 @@ interface ScanResponse {
   scan: ScanRow;
 }
 
+interface RequestScanOptions {
+  textHint?: string;
+  purchasePrice?: number;
+}
+
 /** Calls the /scan edge function to identify the item in a previously-uploaded photo. */
-export async function requestScan(storagePath: string, textHint?: string): Promise<ScanRow> {
+export async function requestScan(storagePath: string, options: RequestScanOptions = {}): Promise<ScanRow> {
   const { data, error } = await supabase.functions.invoke<ScanResponse>('scan', {
-    body: { storagePath, textHint },
+    body: { storagePath, textHint: options.textHint, purchasePrice: options.purchasePrice },
   });
 
   if (error) {
