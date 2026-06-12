@@ -4,11 +4,16 @@ export type SubscriptionTier = 'free' | 'pro';
 export type InventoryStatus = 'unlisted' | 'listed' | 'sold' | 'shipped';
 export type OrderStatus = 'awaiting_shipment' | 'shipped' | 'delivered' | 'cancelled';
 
+export type ConditionEstimate = 'new' | 'like_new' | 'good' | 'fair' | 'parts_only';
+
 export interface IdentifiedAttributes {
   brand?: string | null;
   model?: string | null;
   part_number?: string | null;
+  condition_estimate?: ConditionEstimate;
+  search_query?: string;
   notable_flaws?: string[];
+  id_confidence?: number;
   [key: string]: unknown;
 }
 
@@ -40,6 +45,7 @@ export interface Database {
           created_at?: string;
         };
         Update: Partial<Database['public']['Tables']['profiles']['Insert']>;
+        Relationships: [];
       };
       scans: {
         Row: {
@@ -77,6 +83,7 @@ export interface Database {
           created_at?: string;
         };
         Update: Partial<Database['public']['Tables']['scans']['Insert']>;
+        Relationships: [];
       };
       inventory: {
         Row: {
@@ -108,6 +115,7 @@ export interface Database {
           created_at?: string;
         };
         Update: Partial<Database['public']['Tables']['inventory']['Insert']>;
+        Relationships: [];
       };
       comps_cache: {
         Row: {
@@ -123,6 +131,7 @@ export interface Database {
           fetched_at?: string;
         };
         Update: Partial<Database['public']['Tables']['comps_cache']['Insert']>;
+        Relationships: [];
       };
       orders: {
         Row: {
@@ -148,7 +157,12 @@ export interface Database {
           created_at?: string;
         };
         Update: Partial<Database['public']['Tables']['orders']['Insert']>;
+        Relationships: [];
       };
     };
+    Views: Record<string, never>;
+    Functions: Record<string, never>;
+    Enums: Record<string, never>;
+    CompositeTypes: Record<string, never>;
   };
 }

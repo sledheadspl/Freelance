@@ -9,7 +9,13 @@
     "userInterfaceStyle": "light",
     "newArchEnabled": true,
     "plugins": [
-      "expo-router"
+      "expo-router",
+      [
+        "expo-camera",
+        {
+          "cameraPermission": "FlipScanner uses your camera to scan items so it can identify them and look up resale value."
+        }
+      ]
     ],
     "ios": {
       "supportsTablet": true
