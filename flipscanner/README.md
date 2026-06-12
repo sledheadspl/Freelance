@@ -3,13 +3,14 @@
 Mobile-first reseller app: scan items, get real eBay sold-comp pricing and an
 ROI-based buy/skip recommendation, then manage inventory and listings.
 
-This repo currently implements **Build Order steps 1-8**: project scaffold
+This repo currently implements **Build Order steps 1-9**: project scaffold
 (Expo + TypeScript strict mode), the Supabase database schema, Supabase
 email/password auth, the camera scan flow (capture → upload → Claude vision
 item identification → results screen), the eBay sold-comps + ROI pipeline
 that powers the buy/skip recommendation, a scan history / watchlist UI, the
-"I bought it" → inventory flow, the "Connect eBay" OAuth flow (sandbox), and
-an AI-generated draft listing editor.
+"I bought it" → inventory flow, the "Connect eBay" OAuth flow (sandbox), an
+AI-generated draft listing editor, and publishing listings to eBay via the
+Sell APIs.
 
 ## Stack
 
@@ -37,9 +38,11 @@ supabase/functions/   Edge functions (Deno)
   ebay-oauth-start/   Builds the eBay consent screen URL (auth required)
   ebay-oauth-callback/ Exchanges the OAuth code for tokens (public, no JWT)
   generate-listing/   Generates an eBay listing title/description with Claude
+  publish-listing/    Publishes a listing draft via the eBay Sell APIs
   _shared/            anthropic.ts (vision), comps.ts (eBay/Apify + cache),
                        roi.ts (ROI math, unit tested), ebayOAuth.ts (Sell API OAuth),
-                       listing.ts (listing copy generation)
+                       listing.ts (listing copy generation), ebaySell.ts /
+                       ebayCategory.ts (publish pipeline)
 ```
 
 ## Getting started
@@ -73,10 +76,14 @@ supabase/functions/   Edge functions (Deno)
    supabase secrets set APIFY_TOKEN=... APIFY_SOLD_LISTINGS_ACTOR_ID=...
    # Required for the "Connect eBay" flow — see "eBay OAuth connect flow" below.
    supabase secrets set EBAY_OAUTH_REDIRECT_URI=... EBAY_OAUTH_STATE_SECRET=...
+   # Required to publish listings — see "Publish to eBay" below.
+   supabase secrets set EBAY_MERCHANT_LOCATION_KEY=... EBAY_FULFILLMENT_POLICY_ID=... \
+     EBAY_PAYMENT_POLICY_ID=... EBAY_RETURN_POLICY_ID=...
    supabase functions deploy scan
    supabase functions deploy ebay-oauth-start
    supabase functions deploy ebay-oauth-callback
    supabase functions deploy generate-listing
+   supabase functions deploy publish-listing
    ```
 
 5. Start the app:
@@ -232,7 +239,34 @@ Inventory tab) lets the user prepare an eBay listing for a purchased item:
 This step only prepares the draft; publishing it to eBay (creating the
 inventory item, offer, and listing via the Sell APIs) is step 9.
 
+## Publish to eBay (step 9)
+
+Once a draft has a title, description, and listing price, the listing draft
+screen shows a "Publish to eBay" button (for items with `status = 'unlisted'`).
+This calls the `publish-listing` Edge Function, which:
+
+1. Confirms the user has connected eBay (`profiles.ebay_connected` +
+   `ebay_refresh_token`) and exchanges the refresh token for a user access
+   token (`supabase/functions/_shared/ebaySell.ts`).
+2. Creates a signed URL for the scan's photo (eBay requires a publicly
+   reachable image URL) and looks up an eBay category id for the item via the
+   Taxonomy API (`supabase/functions/_shared/ebayCategory.ts`), falling back
+   to `EBAY_DEFAULT_CATEGORY_ID` if configured.
+3. Runs the Sell Inventory API pipeline: create/replace the inventory item
+   (title, description, image, condition), create a fixed-price offer using
+   the seller's business policies, then publish the offer.
+4. On success, sets `inventory.status = 'listed'` and stores
+   `ebay_offer_id` / `ebay_listing_id`; the draft screen shows "✓ Listed on
+   eBay (#listingId)".
+
+Creating an offer requires the seller account to have business policies
+configured in Seller Hub (or the eBay sandbox equivalent) — their ids are
+passed via `EBAY_MERCHANT_LOCATION_KEY`, `EBAY_FULFILLMENT_POLICY_ID`,
+`EBAY_PAYMENT_POLICY_ID`, and `EBAY_RETURN_POLICY_ID`. Without these set,
+publishing fails with a clear configuration error rather than a partial
+listing.
+
 ## Next steps (Build Order)
 
-See the FlipScanner spec for the full plan. Step 9 (publish to eBay) is
-next.
+See the FlipScanner spec for the full plan. Step 10 (order polling + push
+notifications) is next.

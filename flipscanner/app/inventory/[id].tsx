@@ -14,7 +14,7 @@ import {
   View,
 } from 'react-native';
 
-import { generateListing, updateListingDraft } from '../../src/lib/listing';
+import { generateListing, publishListing, updateListingDraft } from '../../src/lib/listing';
 import { formatCurrency } from '../../src/lib/scanDisplay';
 import { supabase } from '../../src/lib/supabase';
 import type { Database } from '../../src/types/database';
@@ -35,6 +35,7 @@ export default function ListingDraft() {
   const [priceInput, setPriceInput] = useState('');
   const [generating, setGenerating] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [publishing, setPublishing] = useState(false);
 
   const load = useCallback(async () => {
     const { data, error: fetchError } = await supabase
@@ -123,6 +124,21 @@ export default function ListingDraft() {
     }
   }
 
+  async function handlePublish() {
+    if (!item) return;
+
+    setPublishing(true);
+    try {
+      const updated = await publishListing(item.id);
+      setItem({ ...item, ...updated });
+      Alert.alert('Published', 'Your item is now listed on eBay.');
+    } catch (err) {
+      Alert.alert('Error', err instanceof Error ? err.message : 'Failed to publish listing.');
+    } finally {
+      setPublishing(false);
+    }
+  }
+
   if (loading) {
     return (
       <View style={styles.center}>
@@ -202,6 +218,24 @@ export default function ListingDraft() {
         <Pressable style={[styles.button, styles.saveButton]} onPress={handleSave} disabled={saving}>
           {saving ? <ActivityIndicator color="#fff" /> : <Text style={styles.buttonText}>Save Draft</Text>}
         </Pressable>
+
+        {item.status === 'unlisted' ? (
+          <Pressable
+            style={[styles.button, styles.publishButton]}
+            onPress={handlePublish}
+            disabled={publishing}
+          >
+            {publishing ? (
+              <ActivityIndicator color="#fff" />
+            ) : (
+              <Text style={styles.buttonText}>Publish to eBay</Text>
+            )}
+          </Pressable>
+        ) : (
+          <Text style={styles.listedNotice}>
+            ✓ Listed on eBay{item.ebay_listing_id ? ` (#${item.ebay_listing_id})` : ''}
+          </Text>
+        )}
       </ScrollView>
     </KeyboardAvoidingView>
   );
@@ -284,6 +318,15 @@ const styles = StyleSheet.create({
   },
   saveButton: {
     backgroundColor: '#1a7f37',
+  },
+  publishButton: {
+    backgroundColor: '#0064d2',
+  },
+  listedNotice: {
+    marginTop: 20,
+    textAlign: 'center',
+    color: '#1a7f37',
+    fontWeight: '600',
   },
   buttonText: {
     color: '#fff',

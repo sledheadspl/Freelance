@@ -41,3 +41,23 @@ export async function updateListingDraft(
 
   return data;
 }
+
+interface PublishListingResponse {
+  inventory: InventoryRow;
+}
+
+/** Publishes a saved listing draft to eBay (creates the inventory item, offer, and listing). */
+export async function publishListing(inventoryId: string): Promise<InventoryRow> {
+  const { data, error } = await supabase.functions.invoke<PublishListingResponse>('publish-listing', {
+    body: { inventoryId },
+  });
+
+  if (error) {
+    throw new Error(error.message);
+  }
+  if (!data) {
+    throw new Error('No response from publish-listing function');
+  }
+
+  return data.inventory;
+}
