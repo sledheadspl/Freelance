@@ -2,42 +2,11 @@ import { useLocalSearchParams } from 'expo-router';
 import { useEffect, useState } from 'react';
 import { ActivityIndicator, Image, ScrollView, StyleSheet, Text, View } from 'react-native';
 
+import { CONDITION_LABELS, GradeBadge, RecommendationBadge, formatCurrency } from '../../src/lib/scanDisplay';
 import { supabase } from '../../src/lib/supabase';
 import type { Database, IdentifiedAttributes } from '../../src/types/database';
 
 type ScanRow = Database['public']['Tables']['scans']['Row'];
-
-const CONDITION_LABELS: Record<string, string> = {
-  new: 'New',
-  like_new: 'Like New',
-  good: 'Good',
-  fair: 'Fair',
-  parts_only: 'Parts Only',
-};
-
-const GRADE_COLORS: Record<string, string> = {
-  A: '#1a7f37',
-  B: '#2f6feb',
-  C: '#9a6700',
-  D: '#999',
-};
-
-const RECOMMENDATION_LABELS: Record<string, string> = {
-  buy: 'BUY',
-  maybe: 'MAYBE',
-  skip: 'SKIP',
-};
-
-const RECOMMENDATION_COLORS: Record<string, string> = {
-  buy: '#1a7f37',
-  maybe: '#9a6700',
-  skip: '#cf222e',
-};
-
-function formatCurrency(value: number | null): string {
-  if (value == null) return '—';
-  return `$${value.toFixed(2)}`;
-}
 
 export default function ScanResult() {
   const { id } = useLocalSearchParams<{ id: string }>();
@@ -146,18 +115,12 @@ export default function ScanResult() {
       <View style={styles.section}>
         <View style={styles.pricingHeader}>
           <Text style={styles.sectionTitle}>Pricing & ROI</Text>
-          <View style={[styles.gradeBadge, { backgroundColor: GRADE_COLORS[scan.confidence_grade ?? 'D'] }]}>
-            <Text style={styles.gradeBadgeText}>{scan.confidence_grade ?? 'D'}</Text>
-          </View>
+          <GradeBadge grade={scan.confidence_grade} />
         </View>
 
-        {scan.recommendation ? (
-          <View
-            style={[styles.recommendationBadge, { backgroundColor: RECOMMENDATION_COLORS[scan.recommendation] }]}
-          >
-            <Text style={styles.recommendationText}>{RECOMMENDATION_LABELS[scan.recommendation]}</Text>
-          </View>
-        ) : null}
+        <View style={styles.recommendationWrapper}>
+          <RecommendationBadge recommendation={scan.recommendation} />
+        </View>
 
         {scan.comps_count === 0 ? (
           <Text style={styles.placeholder}>
@@ -267,27 +230,7 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     marginBottom: 8,
   },
-  gradeBadge: {
-    width: 28,
-    height: 28,
-    borderRadius: 14,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  gradeBadgeText: {
-    color: '#fff',
-    fontWeight: '700',
-  },
-  recommendationBadge: {
-    alignSelf: 'flex-start',
-    borderRadius: 6,
-    paddingVertical: 4,
-    paddingHorizontal: 10,
+  recommendationWrapper: {
     marginBottom: 12,
-  },
-  recommendationText: {
-    color: '#fff',
-    fontWeight: '700',
-    letterSpacing: 1,
   },
 });

@@ -3,11 +3,11 @@
 Mobile-first reseller app: scan items, get real eBay sold-comp pricing and an
 ROI-based buy/skip recommendation, then manage inventory and listings.
 
-This repo currently implements **Build Order steps 1-4**: project scaffold
+This repo currently implements **Build Order steps 1-5**: project scaffold
 (Expo + TypeScript strict mode), the Supabase database schema, Supabase
 email/password auth, the camera scan flow (capture → upload → Claude vision
-item identification → results screen), and the eBay sold-comps + ROI pipeline
-that powers the buy/skip recommendation.
+item identification → results screen), the eBay sold-comps + ROI pipeline
+that powers the buy/skip recommendation, and a scan history / watchlist UI.
 
 ## Stack
 
@@ -24,7 +24,8 @@ app/                  expo-router routes
   scan/[id]/          scan result screen
 src/
   contexts/           AuthContext (Supabase session state)
-  lib/                Supabase client, scan upload + edge function helper
+  lib/                Supabase client, scan upload + edge function helper,
+                       shared scan display helpers (badges, formatting)
   types/              Database row types matching the Supabase schema
 supabase/migrations/  SQL schema + storage migrations
 supabase/functions/   Edge functions (Deno)
@@ -148,7 +149,16 @@ npm test
 5. Store all eBay credentials as Supabase Edge Function secrets, never in the
    mobile app bundle.
 
+## Scan history / watchlist (step 5)
+
+The History tab (`app/(tabs)/history.tsx`) lists the signed-in user's scans,
+newest first, with filter chips for All / Buy / Maybe / Skip (based on
+`scans.recommendation`). Each row shows a thumbnail (signed Storage URL),
+item name/category, confidence grade, recommendation badge, estimated sale
+price, and a relative timestamp. Pull-to-refresh re-fetches the list; tapping
+a row opens `/scan/[id]`.
+
 ## Next steps (Build Order)
 
-See the FlipScanner spec for the full plan. Step 5 (scan history / watchlist
-UI) is next.
+See the FlipScanner spec for the full plan. Step 6 ("I bought it" → inventory
+flow) is next.
