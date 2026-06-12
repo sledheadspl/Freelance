@@ -92,10 +92,7 @@ export default function Inventory() {
         renderItem={({ item }) => {
           const imagePath = item.scans?.image_url;
           return (
-            <Pressable
-              style={styles.row}
-              onPress={() => item.scan_id && router.push(`/scan/${item.scan_id}`)}
-            >
+            <Pressable style={styles.row} onPress={() => router.push(`/inventory/${item.id}`)}>
               {imagePath && imageUrls[imagePath] ? (
                 <Image source={{ uri: imageUrls[imagePath] }} style={styles.thumbnail} />
               ) : (
@@ -111,6 +108,7 @@ export default function Inventory() {
                 </Text>
                 <View style={styles.rowMeta}>
                   <Text style={styles.rowPrice}>Paid {formatCurrency(item.purchase_price)}</Text>
+                  {item.listing_title ? <Text style={styles.rowDraft}>Draft ready</Text> : null}
                 </View>
               </View>
 
@@ -201,6 +199,11 @@ const styles = StyleSheet.create({
     marginTop: 6,
   },
   rowPrice: {
+    fontWeight: '600',
+  },
+  rowDraft: {
+    fontSize: 12,
+    color: '#1a7f37',
     fontWeight: '600',
   },
   statusBadge: {

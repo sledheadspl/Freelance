@@ -3,12 +3,13 @@
 Mobile-first reseller app: scan items, get real eBay sold-comp pricing and an
 ROI-based buy/skip recommendation, then manage inventory and listings.
 
-This repo currently implements **Build Order steps 1-7**: project scaffold
+This repo currently implements **Build Order steps 1-8**: project scaffold
 (Expo + TypeScript strict mode), the Supabase database schema, Supabase
 email/password auth, the camera scan flow (capture → upload → Claude vision
 item identification → results screen), the eBay sold-comps + ROI pipeline
 that powers the buy/skip recommendation, a scan history / watchlist UI, the
-"I bought it" → inventory flow, and the "Connect eBay" OAuth flow (sandbox).
+"I bought it" → inventory flow, the "Connect eBay" OAuth flow (sandbox), and
+an AI-generated draft listing editor.
 
 ## Stack
 
@@ -23,19 +24,22 @@ app/                  expo-router routes
   (auth)/             sign-in / sign-up screens
   (tabs)/             authenticated tab navigator (scan, history, inventory, settings)
   scan/[id]/          scan result screen
+  inventory/[id]/     listing draft screen
 src/
   contexts/           AuthContext (Supabase session state)
   lib/                Supabase client, scan upload + edge function helper,
                        shared scan display helpers (badges, formatting),
-                       inventory helpers
+                       inventory + listing draft helpers
   types/              Database row types matching the Supabase schema
 supabase/migrations/  SQL schema + storage migrations
 supabase/functions/   Edge functions (Deno)
   scan/               Orchestrates identification, comps, and ROI
   ebay-oauth-start/   Builds the eBay consent screen URL (auth required)
   ebay-oauth-callback/ Exchanges the OAuth code for tokens (public, no JWT)
+  generate-listing/   Generates an eBay listing title/description with Claude
   _shared/            anthropic.ts (vision), comps.ts (eBay/Apify + cache),
-                       roi.ts (ROI math, unit tested), ebayOAuth.ts (Sell API OAuth)
+                       roi.ts (ROI math, unit tested), ebayOAuth.ts (Sell API OAuth),
+                       listing.ts (listing copy generation)
 ```
 
 ## Getting started
@@ -72,6 +76,7 @@ supabase/functions/   Edge functions (Deno)
    supabase functions deploy scan
    supabase functions deploy ebay-oauth-start
    supabase functions deploy ebay-oauth-callback
+   supabase functions deploy generate-listing
    ```
 
 5. Start the app:
@@ -181,7 +186,7 @@ purchase price instead of the button.
 The Inventory tab (`app/(tabs)/inventory.tsx`) lists the user's inventory,
 newest first, joined with the originating scan for a thumbnail, item name,
 category, purchase price, and status badge (unlisted/listed/sold/shipped).
-Tapping a row opens `/scan/[id]`.
+Tapping a row opens `/inventory/[id]` (the listing draft screen, step 8).
 
 ## eBay OAuth connect flow (step 7)
 
@@ -206,7 +211,28 @@ This flow defaults to the eBay **sandbox** environment (`EBAY_ENV=sandbox`)
 with the `sell.inventory`, `sell.account`, and `sell.fulfillment` scopes,
 needed for the draft-listing and order-sync steps that follow.
 
+## Draft listing generator (step 8)
+
+The listing draft screen (`app/inventory/[id].tsx`, opened from the
+Inventory tab) lets the user prepare an eBay listing for a purchased item:
+
+1. "Generate Draft with AI" calls the `generate-listing` Edge Function, which
+   loads the item's scan identification (name, category, brand, model, part
+   number, condition, notable flaws) and asks Claude
+   (`supabase/functions/_shared/listing.ts`) for an eBay-style title (≤80
+   chars) and an honest description, then saves them to
+   `inventory.listing_title` / `inventory.listing_description`.
+2. The title, description, and a listing price (pre-filled from the scan's
+   estimated sale price) are editable inline. "Save Draft" persists edits —
+   including a manually-typed title/description — directly to the
+   `inventory` row.
+3. The Inventory tab shows a "Draft ready" indicator on items that have a
+   saved `listing_title`.
+
+This step only prepares the draft; publishing it to eBay (creating the
+inventory item, offer, and listing via the Sell APIs) is step 9.
+
 ## Next steps (Build Order)
 
-See the FlipScanner spec for the full plan. Step 8 (draft listing generator)
-is next.
+See the FlipScanner spec for the full plan. Step 9 (publish to eBay) is
+next.

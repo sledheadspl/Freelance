@@ -11,6 +11,7 @@ export default function RootLayout() {
           <Stack.Screen name="(auth)" />
           <Stack.Screen name="(tabs)" />
           <Stack.Screen name="scan" options={{ presentation: 'modal' }} />
+          <Stack.Screen name="inventory" options={{ presentation: 'modal' }} />
         </Stack>
       </AuthProvider>
     </SafeAreaProvider>

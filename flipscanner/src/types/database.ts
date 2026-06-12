@@ -95,6 +95,8 @@ export interface Database {
           ebay_listing_id: string | null;
           ebay_offer_id: string | null;
           listed_price: number | null;
+          listing_title: string | null;
+          listing_description: string | null;
           sold_price: number | null;
           sold_at: string | null;
           shipped_at: string | null;
@@ -109,6 +111,8 @@ export interface Database {
           ebay_listing_id?: string | null;
           ebay_offer_id?: string | null;
           listed_price?: number | null;
+          listing_title?: string | null;
+          listing_description?: string | null;
           sold_price?: number | null;
           sold_at?: string | null;
           shipped_at?: string | null;
