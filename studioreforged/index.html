@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Studio Reforged — Coming Soon</title>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg: #0a0a0a;
+    --surface: #141414;
+    --border: #2a2a2a;
+    --accent: #c8f135;
+    --text: #f0f0f0;
+    --muted: #888;
+  }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    padding: 24px;
+  }
+
+  .container {
+    max-width: 560px;
+  }
+
+  .badge {
+    display: inline-block;
+    border: 1px solid var(--border);
+    background: var(--surface);
+    color: var(--accent);
+    font-size: 0.75rem;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    padding: 6px 14px;
+    border-radius: 999px;
+    margin-bottom: 24px;
+  }
+
+  h1 {
+    font-size: clamp(2rem, 6vw, 3.5rem);
+    line-height: 1.1;
+    margin-bottom: 16px;
+  }
+
+  h1 span {
+    color: var(--accent);
+  }
+
+  p {
+    color: var(--muted);
+    font-size: 1.05rem;
+    line-height: 1.6;
+    margin-bottom: 32px;
+  }
+
+  .contact {
+    border: 1px solid var(--border);
+    background: var(--surface);
+    border-radius: 12px;
+    padding: 20px 24px;
+    display: inline-block;
+  }
+
+  .contact a {
+    color: var(--accent);
+    text-decoration: none;
+    font-weight: 600;
+  }
+
+  .contact a:hover {
+    text-decoration: underline;
+  }
+
+  footer {
+    margin-top: 40px;
+    color: var(--muted);
+    font-size: 0.85rem;
+  }
+</style>
+</head>
+<body>
+  <div class="container">
+    <div class="badge">In Development</div>
+    <h1>Studio Reforged is <span>being built</span>.</h1>
+    <p>We're currently working on something new. Check back soon — in the meantime, feel free to reach out.</p>
+    <div class="contact">
+      <a href="mailto:hello@studioreforged.com">hello@studioreforged.com</a>
+    </div>
+    <footer>&copy; 2026 Studio Reforged. All rights reserved.</footer>
+  </div>
+</body>
+</html>
