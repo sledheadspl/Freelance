@@ -1,0 +1,366 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>RateTruth — Fix The Gap The Calculator Just Showed You</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Mono:ital,wght@0,300;0,400;1,300&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg: #0a0a0a;
+    --surface: #141414;
+    --surface2: #1c1c1c;
+    --border: #2a2a2a;
+    --accent: #c8f135;
+    --text: #f0f0f0;
+    --muted: #666;
+    --danger: #ff4444;
+  }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'DM Mono', monospace;
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background-image:
+      linear-gradient(rgba(200,241,53,0.03) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(200,241,53,0.03) 1px, transparent 1px);
+    background-size: 40px 40px;
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  .container {
+    max-width: 1000px;
+    margin: 0 auto;
+    padding: 40px 24px 80px;
+    position: relative;
+    z-index: 1;
+  }
+
+  header {
+    text-align: center;
+    margin-bottom: 56px;
+    animation: fadeDown 0.6s ease both;
+  }
+
+  .tag {
+    display: inline-block;
+    background: var(--accent);
+    color: #000;
+    font-family: 'Syne', sans-serif;
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    padding: 4px 12px;
+    margin-bottom: 20px;
+  }
+
+  h1 {
+    font-family: 'Syne', sans-serif;
+    font-size: clamp(30px, 5.5vw, 50px);
+    font-weight: 800;
+    line-height: 1.1;
+    letter-spacing: -1px;
+    margin-bottom: 16px;
+  }
+
+  h1 span { color: var(--accent); }
+
+  .subtitle {
+    color: var(--muted);
+    font-size: 14px;
+    line-height: 1.7;
+    max-width: 560px;
+    margin: 0 auto;
+  }
+
+  .back-link {
+    display: inline-block;
+    margin-top: 20px;
+    font-size: 12px;
+    color: var(--accent);
+    text-decoration: none;
+    border-bottom: 1px solid transparent;
+  }
+  .back-link:hover { border-bottom-color: var(--accent); }
+
+  .stack {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 16px;
+    margin-bottom: 48px;
+  }
+
+  @media (max-width: 800px) {
+    .stack { grid-template-columns: 1fr; }
+  }
+
+  .card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    padding: 28px;
+    display: flex;
+    flex-direction: column;
+    animation: fadeUp 0.5s ease both;
+  }
+
+  .card.featured {
+    border-color: var(--accent);
+    position: relative;
+  }
+
+  .card.featured::before {
+    content: 'MOST POPULAR';
+    position: absolute;
+    top: -1px;
+    right: -1px;
+    background: var(--accent);
+    color: #000;
+    font-family: 'Syne', sans-serif;
+    font-size: 9px;
+    font-weight: 700;
+    letter-spacing: 1.5px;
+    padding: 4px 10px;
+  }
+
+  .tier-label {
+    font-size: 10px;
+    color: var(--muted);
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    margin-bottom: 10px;
+  }
+
+  .card-title {
+    font-family: 'Syne', sans-serif;
+    font-size: 20px;
+    font-weight: 800;
+    margin-bottom: 4px;
+  }
+
+  .price {
+    font-family: 'Syne', sans-serif;
+    font-size: 36px;
+    font-weight: 800;
+    color: var(--accent);
+    margin-bottom: 16px;
+  }
+
+  .price span {
+    font-size: 13px;
+    color: var(--muted);
+    font-family: 'DM Mono', monospace;
+    font-weight: 400;
+  }
+
+  .card-desc {
+    font-size: 12.5px;
+    color: var(--muted);
+    line-height: 1.6;
+    margin-bottom: 18px;
+    padding-bottom: 18px;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .features {
+    list-style: none;
+    font-size: 12.5px;
+    line-height: 1.5;
+    margin-bottom: 24px;
+    flex: 1;
+  }
+
+  .features li {
+    padding-left: 18px;
+    position: relative;
+    margin-bottom: 10px;
+    color: var(--text);
+  }
+
+  .features li::before {
+    content: '+';
+    position: absolute;
+    left: 0;
+    color: var(--accent);
+    font-weight: 700;
+  }
+
+  .buy-btn {
+    display: block;
+    text-align: center;
+    background: var(--accent);
+    color: #000;
+    font-family: 'Syne', sans-serif;
+    font-weight: 700;
+    font-size: 12px;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    padding: 14px;
+    text-decoration: none;
+    transition: opacity 0.2s;
+  }
+
+  .buy-btn:hover { opacity: 0.85; }
+
+  .buy-btn.secondary {
+    background: transparent;
+    color: var(--accent);
+    border: 1px solid var(--accent);
+  }
+
+  .note {
+    background: var(--surface2);
+    border-left: 3px solid var(--accent);
+    padding: 20px;
+    font-size: 12.5px;
+    line-height: 1.7;
+    color: var(--muted);
+    margin-bottom: 40px;
+  }
+
+  .note strong { color: var(--text); }
+
+  .stat-strip {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 16px;
+    margin-bottom: 48px;
+  }
+
+  @media (max-width: 700px) {
+    .stat-strip { grid-template-columns: 1fr; }
+  }
+
+  .stat-item {
+    border-left: 2px solid var(--accent);
+    padding-left: 14px;
+  }
+
+  .stat-num {
+    font-family: 'Syne', sans-serif;
+    font-size: 24px;
+    font-weight: 800;
+    color: var(--accent);
+  }
+
+  .stat-sub {
+    font-size: 11px;
+    color: var(--muted);
+    margin-top: 4px;
+    line-height: 1.5;
+  }
+
+  .brand-footer {
+    text-align: center;
+    margin-top: 48px;
+    font-size: 11px;
+    color: var(--border);
+    letter-spacing: 2px;
+    text-transform: uppercase;
+  }
+
+  @keyframes fadeDown {
+    from { opacity: 0; transform: translateY(-20px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  @keyframes fadeUp {
+    from { opacity: 0; transform: translateY(20px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+</style>
+</head>
+<body>
+<div class="container">
+
+  <header>
+    <div class="tag">RateTruth</div>
+    <h1>You found the gap.<br><span>Here's the fix, in three sizes.</span></h1>
+    <p class="subtitle">Raising your rate is the challenge most freelancers say they struggle with most. Each tier below solves a bigger piece of that problem than the last — start with whichever one matches where the calculator showed you're losing the most.</p>
+    <a class="back-link" href="freelance-profit-calculator.html">&larr; Back to the free calculator</a>
+  </header>
+
+  <div class="stat-strip">
+    <div class="stat-item">
+      <div class="stat-num">30%</div>
+      <div class="stat-sub">of freelancers say raising their rate is their single biggest challenge</div>
+    </div>
+    <div class="stat-item">
+      <div class="stat-num">44%</div>
+      <div class="stat-sub">report irregular cash flow as a top pain point — the problem Tier 2 targets directly</div>
+    </div>
+    <div class="stat-item">
+      <div class="stat-num">$96K vs $58K</div>
+      <div class="stat-sub">median income for value-based pricing vs. hourly billing on comparable work</div>
+    </div>
+  </div>
+
+  <div class="stack">
+
+    <div class="card">
+      <div class="tier-label">Tier 1 · Fix this project</div>
+      <div class="card-title">Rate Reality Kit</div>
+      <div class="price">$19</div>
+      <div class="card-desc">Four documents you can use today: how to set a real rate, a value-based proposal template, a client-screening checklist, and word-for-word scope-creep scripts.</div>
+      <ul class="features">
+        <li>Rate-setting guide</li>
+        <li>Value-based proposal template</li>
+        <li>Client-screening checklist</li>
+        <li>Scope-creep email scripts</li>
+      </ul>
+      <!-- STRIPE PAYMENT LINK: replace with your real link from the Stripe Dashboard -->
+      <a class="buy-btn" href="https://buy.stripe.com/REPLACE_WITH_RATE_REALITY_KIT_LINK">Get the kit — $19</a>
+    </div>
+
+    <div class="card featured">
+      <div class="tier-label">Tier 2 · Fix next month</div>
+      <div class="card-title">Systemization Pack</div>
+      <div class="price">$79</div>
+      <div class="card-desc">Turns one-off client work into something closer to predictable: a retainer conversion script, onboarding sequence, multi-service rate calculators, and a niche positioning worksheet.</div>
+      <ul class="features">
+        <li>Retainer conversion script</li>
+        <li>Client onboarding sequence</li>
+        <li>Multi-service rate calculators</li>
+        <li>Niche positioning worksheet</li>
+      </ul>
+      <!-- STRIPE PAYMENT LINK: replace with your real link from the Stripe Dashboard -->
+      <a class="buy-btn" href="https://buy.stripe.com/REPLACE_WITH_SYSTEMIZATION_PACK_LINK">Get the pack — $79</a>
+    </div>
+
+    <div class="card">
+      <div class="tier-label">Tier 3 · Fix the year</div>
+      <div class="card-title">Income Stability System</div>
+      <div class="price">$297</div>
+      <div class="card-desc">The full system: transitioning your whole client base to value-based pricing, a pipeline plan that catches income gaps months ahead, and a target retainer portfolio sized to your own income goal.</div>
+      <ul class="features">
+        <li>Value-based pricing transition plan</li>
+        <li>Capacity &amp; pipeline system</li>
+        <li>Rate-raise scripts, expanded</li>
+        <li>Retainer portfolio design</li>
+      </ul>
+      <!-- STRIPE PAYMENT LINK: replace with your real link from the Stripe Dashboard -->
+      <a class="buy-btn secondary" href="https://buy.stripe.com/REPLACE_WITH_INCOME_STABILITY_LINK">Get the system — $297</a>
+    </div>
+
+  </div>
+
+  <div class="note">
+    <strong>Buy once, own it.</strong> Every tier is a one-time purchase — no subscriptions. Files are delivered by email after purchase. See <code>EXECUTION.md</code> in the project repo for exact setup steps if you're the one running this offer stack.
+  </div>
+
+  <div class="brand-footer">RateTruth &nbsp;·&nbsp; Know Your Real Worth</div>
+
+</div>
+</body>
+</html>
