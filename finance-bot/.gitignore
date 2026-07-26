@@ -1,0 +1,15 @@
+.env
+secrets/
+voices/
+assets/
+stock_cache/
+output/
+review/
+logs/
+publish/posting_log.db
+*.wav
+*.mp3
+*.pyc
+__pycache__/
+.venv/
+venv/

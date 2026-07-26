@@ -1,0 +1,29 @@
+{
+  "bucket": "Money Psychology",
+  "facts": [
+    {
+      "fact": "Lifestyle creep describes spending rising to match income increases, which can leave savings rate flat even as pay grows.",
+      "caveat": "A behavioral pattern observed broadly, not a universal outcome."
+    },
+    {
+      "fact": "Loss aversion (a well-documented behavioral economics finding) describes people generally feeling the pain of a loss more strongly than the pleasure of an equivalent gain, which can distort spending and investing decisions.",
+      "caveat": "A general finding from behavioral economics research; individual reactions vary."
+    },
+    {
+      "fact": "Research on financial behavior often points to emotional and habitual triggers (stress, boredom, social pressure), not just lack of information, as key drivers of overspending.",
+      "caveat": "General behavioral pattern; not a diagnosis of any individual's situation."
+    },
+    {
+      "fact": "The sunk cost fallacy describes continuing to invest money/time into something because of what's already been spent, rather than its future value.",
+      "caveat": "A well-known cognitive bias; applies generally, not to every financial decision."
+    },
+    {
+      "fact": "Automatic, 'set it and forget it' systems (auto-transfers, auto-investing) are commonly recommended in behavioral finance because they remove reliance on ongoing willpower.",
+      "caveat": "A widely cited behavioral design principle, not a guarantee of results."
+    },
+    {
+      "fact": "Money attitudes are often shaped early by family/environment ('money scripts'), a concept used in financial therapy and coaching literature.",
+      "caveat": "A framework used in financial psychology literature, not a clinical diagnosis."
+    }
+  ]
+}

@@ -1,0 +1,33 @@
+{
+  "bucket": "Myth-Busting",
+  "facts": [
+    {
+      "fact": "Myth: you need a 'perfect' credit score to qualify for a mortgage. Reality: many loan programs approve borrowers well below a perfect score, though the rate offered typically improves as the score rises.",
+      "caveat": "Exact qualifying thresholds vary by lender and loan program; verify current guidelines before citing specific cutoffs."
+    },
+    {
+      "fact": "Myth: renting is always 'throwing money away.' Reality: renting also buys flexibility and avoids costs like maintenance, property tax, and interest; whether buying is cheaper depends heavily on how long you stay and local price-to-rent ratios.",
+      "caveat": "Highly dependent on local market conditions and individual circumstances; no universal answer."
+    },
+    {
+      "fact": "Myth: carrying a small credit card balance instead of paying in full helps your score. Reality: what's reported to the bureau is the statement balance, and paying in full avoids interest without hurting your score.",
+      "caveat": "Common misconception; utilization is calculated from the reported balance regardless of whether interest accrues."
+    },
+    {
+      "fact": "Myth: you need a lot of money to start investing. Reality: many brokerages allow starting with small amounts, including fractional shares, though fees and minimums vary by platform.",
+      "caveat": "Platform-specific details change over time; verify current minimums/fees before citing specifics."
+    },
+    {
+      "fact": "Myth: checking your own credit score hurts it. Reality: that's a soft inquiry and doesn't affect your score; only hard inquiries from lenders reviewing a new application can cause a small dip.",
+      "caveat": "See credit.json for the underlying utilization/inquiry facts."
+    },
+    {
+      "fact": "Myth: all debt is bad debt. Reality: some debt (e.g., a reasonably priced mortgage or a loan financing an appreciating or income-producing asset) is commonly distinguished from high-interest consumer debt used for depreciating purchases.",
+      "caveat": "A framing used by financial educators; not a claim that any specific debt is universally 'good.'"
+    },
+    {
+      "fact": "Myth: you must pay off your mortgage completely before investing. Reality: many financial planners suggest weighing the mortgage's interest rate against expected investment returns and any employer match being missed, rather than treating it as all-or-nothing.",
+      "caveat": "A general framework, not individualized advice; the right answer depends on rate, risk tolerance, and goals."
+    }
+  ]
+}

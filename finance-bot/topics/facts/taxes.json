@@ -1,0 +1,33 @@
+{
+  "bucket": "Taxes",
+  "facts": [
+    {
+      "fact": "A tax deduction reduces the amount of income subject to tax, while a tax credit reduces the tax bill directly, dollar for dollar.",
+      "caveat": "Some credits are non-refundable and only offset tax owed; a few are refundable. Specifics vary by credit."
+    },
+    {
+      "fact": "In a marginal tax bracket system, higher rates apply only to the portion of income within that bracket, not to all income earned.",
+      "caveat": "A structural explanation of how brackets work; actual bracket thresholds change annually and by filing status."
+    },
+    {
+      "fact": "Taxpayers can choose between the standard deduction (a flat amount) and itemizing specific deductible expenses, generally picking whichever is larger.",
+      "caveat": "Exact standard deduction amounts change annually; verify current figures before citing them."
+    },
+    {
+      "fact": "Withholding is an estimate of tax owed collected throughout the year from paychecks; a refund or balance due at filing reflects the difference between withholding and actual tax liability, not a bonus or penalty by itself.",
+      "caveat": "General mechanics; individual outcomes depend on personal tax situation."
+    },
+    {
+      "fact": "People with significant self-employment or side income in the U.S. may need to pay estimated taxes quarterly rather than relying on employer withholding.",
+      "caveat": "Thresholds and safe-harbor rules change and depend on individual circumstances; verify current IRS guidance."
+    },
+    {
+      "fact": "Tax-advantaged accounts (like retirement or health savings accounts) can reduce taxable income or grow tax-free/tax-deferred depending on the account type.",
+      "caveat": "Contribution limits and eligibility rules change annually; verify current figures before citing them."
+    },
+    {
+      "fact": "Filing late without an extension, when taxes are owed, can trigger penalties and interest that generally continue to accrue until the balance is paid.",
+      "caveat": "Exact penalty rates and structures change; verify current IRS guidance before citing specific percentages."
+    }
+  ]
+}

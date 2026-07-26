@@ -1,0 +1,33 @@
+{
+  "bucket": "Budgeting & Saving",
+  "facts": [
+    {
+      "fact": "The 50/30/20 rule suggests roughly 50% of after-tax income toward needs, 30% toward wants, and 20% toward savings/debt paydown.",
+      "caveat": "A popularized guideline, not a rule that fits every income level or city."
+    },
+    {
+      "fact": "A common starter emergency fund target is $1,000, before working toward 3-6 months of essential expenses.",
+      "caveat": "The 3-6 month range is a general guideline; job stability and dependents can push it higher or lower."
+    },
+    {
+      "fact": "Many small, recurring subscriptions (streaming, apps, memberships) can add up to a meaningful monthly amount without being noticed, which is why periodic subscription audits are commonly recommended.",
+      "caveat": "Exact dollar impact varies entirely by household; no single figure applies to everyone."
+    },
+    {
+      "fact": "Automating a transfer to savings on payday (\"paying yourself first\") is a widely cited way to make saving consistent rather than dependent on willpower.",
+      "caveat": "Behavioral finance guidance, not a guaranteed outcome."
+    },
+    {
+      "fact": "Sinking funds (small dedicated savings pots for predictable but irregular costs like car maintenance or holiday gifts) are a standard budgeting technique to avoid derailing a budget.",
+      "caveat": "General technique; amounts should be based on the individual's own irregular expenses."
+    },
+    {
+      "fact": "Zero-based budgeting assigns every dollar of income a job (spend, save, or debt payoff) so income minus allocations equals zero.",
+      "caveat": "A budgeting method, not a claim about outcomes."
+    },
+    {
+      "fact": "High-yield savings accounts typically pay meaningfully more interest than a standard brick-and-mortar savings account, though the exact rate moves with the broader interest-rate environment.",
+      "caveat": "Rates change over time; verify current rates before citing a specific number."
+    }
+  ]
+}

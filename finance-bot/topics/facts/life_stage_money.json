@@ -1,0 +1,25 @@
+{
+  "bucket": "Life-Stage Money",
+  "facts": [
+    {
+      "fact": "Starting retirement contributions earlier, even at a smaller amount, generally requires less total money invested to reach the same eventual balance than starting later, due to compounding over a longer time horizon.",
+      "caveat": "Illustrative principle; actual outcomes depend on returns, contribution consistency, and market conditions, which are never guaranteed."
+    },
+    {
+      "fact": "Common first-job financial priorities cited by financial educators include building a small emergency fund, capturing any employer retirement match, and starting a credit history responsibly.",
+      "caveat": "General guidance; individual priorities depend on debt load, income, and circumstances."
+    },
+    {
+      "fact": "Buying a home involves upfront costs beyond the purchase price (closing costs, inspection, moving, maintenance reserve) that are commonly underestimated by first-time buyers.",
+      "caveat": "Exact costs vary enormously by location and situation; no single percentage applies everywhere."
+    },
+    {
+      "fact": "Major life transitions (marriage, having children, a first home) are commonly recommended checkpoints for revisiting beneficiaries, insurance coverage, and budgets.",
+      "caveat": "General financial-planning guidance, not individualized advice."
+    },
+    {
+      "fact": "The concept of a 'financial independence number' (a savings target enabling a sustainable withdrawal rate to cover living expenses) is commonly estimated using a multiple of annual expenses in independence/FIRE community discussions.",
+      "caveat": "Based on general withdrawal-rate discussions; not a guarantee, and sustainable withdrawal rates are debated among researchers."
+    }
+  ]
+}
