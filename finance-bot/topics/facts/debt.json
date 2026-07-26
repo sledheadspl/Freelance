@@ -1,0 +1,33 @@
+{
+  "bucket": "Debt",
+  "facts": [
+    {
+      "fact": "The debt snowball method pays off balances smallest-to-largest regardless of interest rate, prioritizing psychological momentum from quick wins.",
+      "caveat": "A behavioral strategy; may cost more in total interest than the avalanche method."
+    },
+    {
+      "fact": "The debt avalanche method pays off balances highest-interest-rate-first, which minimizes total interest paid mathematically.",
+      "caveat": "Requires more discipline for some people since early wins take longer to see."
+    },
+    {
+      "fact": "Making only the minimum payment on a credit card balance extends payoff time and increases total interest paid substantially compared to paying more than the minimum.",
+      "caveat": "Exact time/interest depends on the specific APR and balance; no single universal number applies."
+    },
+    {
+      "fact": "Federal student loans in the U.S. offer income-driven repayment plans that tie the monthly payment to income and family size.",
+      "caveat": "Program details and availability change over time and by loan type; verify current rules before citing specifics."
+    },
+    {
+      "fact": "Debt-to-income ratio (monthly debt payments divided by gross monthly income) is a common metric lenders use to assess borrowing capacity.",
+      "caveat": "Specific lender thresholds vary by loan type and lender."
+    },
+    {
+      "fact": "Consolidating several high-interest debts into a single lower-interest loan can simplify payments and reduce interest cost, if the borrower qualifies for a materially lower rate.",
+      "caveat": "Not guaranteed to save money if fees are high or the new rate isn't meaningfully lower."
+    },
+    {
+      "fact": "Carrying a revolving balance does not help a credit score; utilization is measured off the reported balance regardless of whether it's paid in full or minimum.",
+      "caveat": "Common misconception worth myth-busting; see credit.json for utilization details."
+    }
+  ]
+}

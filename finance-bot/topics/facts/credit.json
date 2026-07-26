@@ -1,0 +1,33 @@
+{
+  "bucket": "Credit",
+  "facts": [
+    {
+      "fact": "Common credit scoring models weigh payment history and amounts owed (utilization) most heavily, followed by length of credit history, new credit, and credit mix.",
+      "caveat": "Exact weightings differ by scoring model (e.g., FICO vs VantageScore) and are proprietary."
+    },
+    {
+      "fact": "Credit utilization ratio is the amount of revolving credit used divided by total available revolving credit; keeping this ratio low is commonly cited as favorable for scores.",
+      "caveat": "Specific 'ideal' thresholds cited publicly (e.g., under 30%) are general guidance, not hard cutoffs from scoring models."
+    },
+    {
+      "fact": "A hard inquiry (from applying for new credit) can cause a small, typically temporary dip in a credit score.",
+      "caveat": "Impact size and duration vary by individual credit profile."
+    },
+    {
+      "fact": "People with no credit history can typically begin building credit using tools like secured credit cards or becoming an authorized user on another person's account.",
+      "caveat": "Outcomes depend on the primary cardholder's behavior and the issuer's reporting practices."
+    },
+    {
+      "fact": "In the U.S., most negative marks (like late payments) generally stay on a credit report for around seven years, with some exceptions (e.g., certain bankruptcies can remain longer).",
+      "caveat": "Exact retention periods vary by the type of negative item; verify current rules before citing a specific duration."
+    },
+    {
+      "fact": "In the U.S., consumers are entitled to free copies of their credit reports from the major bureaus (availability/frequency has changed over time, including expanded free access in recent years).",
+      "caveat": "Verify current free-access frequency, since program terms have changed over time."
+    },
+    {
+      "fact": "Checking your own credit report or score (a 'soft inquiry') does not lower your credit score.",
+      "caveat": "Distinct from a 'hard inquiry' triggered by a lender when you apply for new credit."
+    }
+  ]
+}

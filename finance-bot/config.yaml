@@ -1,0 +1,64 @@
+# finance-bot configuration.
+# API keys should NOT be hardcoded here — set them as environment variables
+# (see .env.example) and this file only names which env var to use.
+
+llm:
+  provider: ollama
+  base_url: http://localhost:11434
+  model: llama3.1:8b
+  temperature: 0.8
+  max_attempts: 2
+
+tts:
+  engine: piper
+  piper_binary: piper
+  # Path to a downloaded Piper voice .onnx model, e.g. en_US-lessac-medium.onnx
+  voice_model_path: voices/en_US-lessac-medium.onnx
+  pause_between_segments_ms: 350
+
+captions:
+  whisper_model_size: base
+  words_per_caption: 3
+
+video:
+  width: 1080
+  height: 1920
+  fps: 30
+  background_music_path: assets/background_music.mp3
+  background_music_volume: 0.10
+
+qc:
+  min_duration_sec: 45
+  max_duration_sec: 90
+  max_silence_gap_sec: 2.5
+  dedupe_window_days: 60
+
+stock_footage:
+  pexels_api_key_env: PEXELS_API_KEY
+  pixabay_api_key_env: PIXABAY_API_KEY
+  cache_dir: stock_cache
+
+paths:
+  topics_json: topics/topics.json
+  facts_dir: topics/facts
+  output_dir: output
+  review_dir: review
+  logs_dir: logs
+
+publishing:
+  enabled: true
+  platforms:
+    youtube:
+      enabled: true
+      client_secret_path: secrets/youtube_client_secret.json
+      token_path: secrets/youtube_token.json
+      privacy_status: public
+    tiktok:
+      enabled: false  # off by default until your TikTok app passes audit for public posting
+      access_token_env: TIKTOK_ACCESS_TOKEN
+      privacy_level: SELF_ONLY
+    instagram:
+      enabled: false  # off by default until you have a public video_url hosting solution
+      ig_user_id_env: INSTAGRAM_BUSINESS_ACCOUNT_ID
+      access_token_env: INSTAGRAM_ACCESS_TOKEN
+      public_video_url_base: ""  # base URL your rendered videos are reachable at

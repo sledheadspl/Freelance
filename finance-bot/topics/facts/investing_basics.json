@@ -1,0 +1,33 @@
+{
+  "bucket": "Investing Basics",
+  "facts": [
+    {
+      "fact": "Index funds pool money to track a market index (like a broad stock market index) rather than betting on individual companies, typically at low cost.",
+      "caveat": "General description; performance varies with the tracked index and time period."
+    },
+    {
+      "fact": "Compound interest/returns mean earnings themselves start generating further earnings over time, which is why starting to invest earlier tends to matter more than the amount invested per month.",
+      "caveat": "Illustrative principle, not a promise of specific returns; markets can lose value."
+    },
+    {
+      "fact": "Dollar-cost averaging means investing a fixed amount on a regular schedule regardless of price, which smooths out the average purchase price over time.",
+      "caveat": "A strategy for managing timing risk, not a guarantee against loss."
+    },
+    {
+      "fact": "A Roth account is funded with after-tax dollars and (if rules are followed) grows tax-free, while a traditional account is typically funded pre-tax and taxed on withdrawal.",
+      "caveat": "Specific account rules (contribution limits, income limits) change annually; verify current figures before citing them."
+    },
+    {
+      "fact": "Many employers match a portion of retirement account contributions up to a certain percentage of salary, which is often described as an immediate return on that contribution.",
+      "caveat": "Match formulas vary widely by employer; no universal percentage applies."
+    },
+    {
+      "fact": "Expense ratios are the annual fee charged by a fund, expressed as a percentage of assets; even small differences compound meaningfully over long holding periods.",
+      "caveat": "Illustrative principle; exact impact depends on the actual expense ratio, amount invested, and time horizon."
+    },
+    {
+      "fact": "Diversification (spreading money across many holdings rather than concentrating in a few) is a standard technique to reduce single-company risk.",
+      "caveat": "Reduces but does not eliminate investment risk."
+    }
+  ]
+}

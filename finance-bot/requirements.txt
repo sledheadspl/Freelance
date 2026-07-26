@@ -1,0 +1,21 @@
+requests>=2.31
+pyyaml>=6.0
+python-dotenv>=1.0
+
+# Local LLM (talks to a local Ollama server over HTTP; no separate client lib required)
+
+# Local TTS
+piper-tts>=1.2
+pydub>=0.25
+
+# Local captioning
+faster-whisper>=1.0
+
+# Video assembly
+moviepy>=1.0.3
+pillow>=10.0
+
+# Publishing (free-tier platform APIs)
+google-api-python-client>=2.100
+google-auth-oauthlib>=1.2
+google-auth>=2.30
