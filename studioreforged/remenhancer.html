@@ -565,6 +565,65 @@
     cursor: default;
   }
 
+  #protectedContent { display: none; }
+
+  .auth-gate {
+    position: fixed;
+    inset: 0;
+    z-index: 100;
+    background: var(--bg);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 24px;
+  }
+
+  .auth-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    padding: 36px 32px;
+    width: 100%;
+    max-width: 360px;
+    animation: fadeUp 0.4s ease both;
+  }
+
+  .auth-card h2 {
+    font-family: 'Syne', sans-serif;
+    font-size: 22px;
+    font-weight: 800;
+    margin-bottom: 10px;
+  }
+
+  .auth-sub {
+    color: var(--muted);
+    font-size: 12px;
+    line-height: 1.6;
+    margin-bottom: 24px;
+  }
+
+  input[type="text"], input[type="password"] {
+    width: 100%;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    color: var(--text);
+    font-family: 'DM Mono', monospace;
+    font-size: 14px;
+    padding: 10px 12px;
+    outline: none;
+    transition: border-color 0.2s;
+  }
+
+  input[type="text"]:focus, input[type="password"]:focus { border-color: var(--accent); }
+
+  .auth-error {
+    display: none;
+    color: var(--danger);
+    font-size: 12px;
+    margin-top: 14px;
+  }
+
+  .auth-error.show { display: block; }
+
   @keyframes fadeDown {
     from { opacity: 0; transform: translateY(-20px); }
     to { opacity: 1; transform: translateY(0); }
@@ -582,7 +641,26 @@
 </style>
 </head>
 <body>
-<div class="container">
+
+<div class="auth-gate" id="authGate">
+  <div class="auth-card">
+    <div class="tag">Protected</div>
+    <h2>REMEnhancer Access</h2>
+    <p class="auth-sub">This tool is password protected. Enter your credentials to continue.</p>
+    <div class="field">
+      <label>Username</label>
+      <input type="text" id="authUser" autocomplete="username">
+    </div>
+    <div class="field">
+      <label>Password</label>
+      <input type="password" id="authPass" autocomplete="current-password">
+    </div>
+    <button class="process-btn" id="authSubmit" type="button" style="margin-top: 6px;">Unlock</button>
+    <div class="auth-error" id="authError">Incorrect username or password.</div>
+  </div>
+</div>
+
+<div class="container" id="protectedContent">
 
   <nav class="site-nav">
     <a href="/">Studio Reforged</a>
@@ -721,6 +799,52 @@
   <div class="brand-footer">REMEnhancer &nbsp;·&nbsp; <a href="/">Studio Reforged</a></div>
 
 </div>
+
+<script>
+(function () {
+  'use strict';
+
+  var VALID_USER = 'NSTREF';
+  var VALID_PASS = 'N1s2tref4!';
+  var STORAGE_KEY = 'remenhancer_authed';
+
+  var gate = document.getElementById('authGate');
+  var content = document.getElementById('protectedContent');
+  var userInput = document.getElementById('authUser');
+  var passInput = document.getElementById('authPass');
+  var errorEl = document.getElementById('authError');
+  var submitBtn = document.getElementById('authSubmit');
+
+  function unlock() {
+    gate.style.display = 'none';
+    content.style.display = 'block';
+    try { sessionStorage.setItem(STORAGE_KEY, '1'); } catch (e) {}
+  }
+
+  function attempt() {
+    if (userInput.value === VALID_USER && passInput.value === VALID_PASS) {
+      unlock();
+    } else {
+      errorEl.classList.add('show');
+      passInput.value = '';
+      passInput.focus();
+    }
+  }
+
+  submitBtn.addEventListener('click', attempt);
+  passInput.addEventListener('keydown', function (e) { if (e.key === 'Enter') attempt(); });
+  userInput.addEventListener('keydown', function (e) { if (e.key === 'Enter') passInput.focus(); });
+
+  var alreadyAuthed = false;
+  try { alreadyAuthed = sessionStorage.getItem(STORAGE_KEY) === '1'; } catch (e) {}
+
+  if (alreadyAuthed) {
+    unlock();
+  } else {
+    userInput.focus();
+  }
+})();
+</script>
 
 <script>
 (function () {
