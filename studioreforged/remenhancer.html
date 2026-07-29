@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Photo Upscaler — Increase Image Resolution in Your Browser</title>
+<title>REMEnhancer — Photo Resolution Enhancer by Studio Reforged</title>
 <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Mono:ital,wght@0,300;0,400;1,300&display=swap" rel="stylesheet">
 <style>
   *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
@@ -442,6 +442,129 @@
     text-transform: uppercase;
   }
 
+  .brand-footer a { color: var(--border); text-decoration: none; }
+  .brand-footer a:hover { color: var(--accent); }
+
+  .site-nav {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    max-width: 980px;
+    margin: 0 auto 40px;
+    font-family: 'Syne', sans-serif;
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    animation: fadeDown 0.6s ease both;
+  }
+
+  .site-nav a {
+    color: var(--text);
+    text-decoration: none;
+    transition: color 0.2s;
+  }
+
+  .site-nav a:hover { color: var(--accent); }
+
+  .site-nav .nav-product { color: var(--accent); }
+
+  .pricing-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 16px;
+  }
+
+  @media (max-width: 720px) {
+    .pricing-grid { grid-template-columns: 1fr; }
+  }
+
+  .price-tier {
+    position: relative;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    padding: 24px 20px;
+    display: flex;
+    flex-direction: column;
+  }
+
+  .price-tier.featured { border-color: var(--accent); }
+
+  .price-tier-badge {
+    position: absolute;
+    top: -10px;
+    right: 16px;
+    background: var(--accent);
+    color: #000;
+    font-family: 'Syne', sans-serif;
+    font-size: 9px;
+    font-weight: 700;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    padding: 3px 8px;
+  }
+
+  .price-tier-name {
+    font-family: 'Syne', sans-serif;
+    font-weight: 700;
+    font-size: 14px;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    margin-bottom: 8px;
+  }
+
+  .price-tier-price {
+    font-family: 'Syne', sans-serif;
+    font-weight: 800;
+    font-size: 26px;
+    color: var(--accent);
+    margin-bottom: 16px;
+  }
+
+  .price-tier-price span {
+    font-family: 'DM Mono', monospace;
+    font-size: 11px;
+    font-weight: 400;
+    color: var(--muted);
+  }
+
+  .price-features {
+    list-style: none;
+    font-size: 12px;
+    color: var(--muted);
+    line-height: 2;
+    margin-bottom: 20px;
+    flex-grow: 1;
+  }
+
+  .price-features li::before {
+    content: '— ';
+    color: var(--accent);
+  }
+
+  .price-tier-cta {
+    display: block;
+    text-align: center;
+    text-decoration: none;
+    font-family: 'Syne', sans-serif;
+    font-weight: 700;
+    font-size: 11px;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    padding: 12px;
+    border: 1px solid var(--accent);
+    color: var(--accent);
+    transition: background 0.2s, color 0.2s;
+  }
+
+  .price-tier-cta:hover { background: var(--accent); color: #000; }
+
+  .price-tier-cta.price-tier-current {
+    border-color: var(--border);
+    color: var(--muted);
+    cursor: default;
+  }
+
   @keyframes fadeDown {
     from { opacity: 0; transform: translateY(-20px); }
     to { opacity: 1; transform: translateY(0); }
@@ -461,9 +584,14 @@
 <body>
 <div class="container">
 
+  <nav class="site-nav">
+    <a href="/">Studio Reforged</a>
+    <span class="nav-product">REMEnhancer</span>
+  </nav>
+
   <header>
     <div class="tag">Free Tool</div>
-    <h1>Upscale your photos<br><span>without losing quality</span></h1>
+    <h1><span>REMEnhancer</span><br>upscales photos without losing quality</h1>
     <p class="subtitle">Enlarge any image up to 4x using high-quality Lanczos resampling and edge sharpening — right in your browser. Nothing is uploaded anywhere.</p>
   </header>
 
@@ -552,7 +680,45 @@
 
   <p class="privacy-note">🔒 <b>100% private.</b> Your photo is processed entirely on your device using your browser's JavaScript engine — it is never uploaded to a server.</p>
 
-  <div class="brand-footer">Photo Upscaler &nbsp;·&nbsp; High-Quality Client-Side Resizing</div>
+  <div class="card" style="margin-top: 40px;">
+    <div class="card-title">💳 Plans &amp; Pricing</div>
+    <div class="pricing-grid">
+      <div class="price-tier">
+        <div class="price-tier-name">Free</div>
+        <div class="price-tier-price">$0</div>
+        <ul class="price-features">
+          <li>Up to 4× upscaling</li>
+          <li>PNG &amp; JPEG export</li>
+          <li>Unlimited personal use</li>
+        </ul>
+        <span class="price-tier-cta price-tier-current">You're using this now</span>
+      </div>
+      <div class="price-tier featured">
+        <div class="price-tier-badge">Coming Soon</div>
+        <div class="price-tier-name">Pro</div>
+        <div class="price-tier-price">TBD<span>/mo</span></div>
+        <ul class="price-features">
+          <li>Batch upscaling</li>
+          <li>Higher resolution caps</li>
+          <li>Priority processing</li>
+        </ul>
+        <a class="price-tier-cta" href="mailto:hello@studioreforged.com?subject=REMEnhancer%20Pro%20Waitlist">Join the Waitlist</a>
+      </div>
+      <div class="price-tier">
+        <div class="price-tier-badge">Coming Soon</div>
+        <div class="price-tier-name">Commercial License</div>
+        <div class="price-tier-price">TBD</div>
+        <ul class="price-features">
+          <li>Client &amp; commercial use</li>
+          <li>API / bulk access</li>
+          <li>Priority support</li>
+        </ul>
+        <a class="price-tier-cta" href="mailto:hello@studioreforged.com?subject=REMEnhancer%20Commercial%20License">Contact Sales</a>
+      </div>
+    </div>
+  </div>
+
+  <div class="brand-footer">REMEnhancer &nbsp;·&nbsp; <a href="/">Studio Reforged</a></div>
 
 </div>
 
