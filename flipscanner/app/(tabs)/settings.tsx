@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from 'react';
-import { ActivityIndicator, Alert, Pressable, StyleSheet, Text, View } from 'react-native';
+import { ActivityIndicator, Alert, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 
 import { useAuth } from '../../src/contexts/AuthContext';
 import { openBillingPortal, startProCheckout } from '../../src/lib/billing';
@@ -13,13 +13,14 @@ export default function Settings() {
   const [connecting, setConnecting] = useState(false);
   const [subscriptionTier, setSubscriptionTier] = useState<SubscriptionTier | null>(null);
   const [billingLoading, setBillingLoading] = useState(false);
+  const [profileLoading, setProfileLoading] = useState(true);
 
   const refreshEbayStatus = useCallback(async () => {
     if (!session) return;
     try {
       setEbayConnected(await getEbayConnected(session.user.id));
     } catch {
-      setEbayConnected(null);
+      setEbayConnected(false);
     }
   }, [session]);
 
@@ -32,12 +33,16 @@ export default function Settings() {
       .single();
     if (!error && data) {
       setSubscriptionTier(data.subscription_tier);
+    } else {
+      setSubscriptionTier('free');
     }
   }, [session]);
 
   useEffect(() => {
-    refreshEbayStatus();
-    refreshSubscription();
+    setProfileLoading(true);
+    Promise.all([refreshEbayStatus(), refreshSubscription()]).finally(() =>
+      setProfileLoading(false)
+    );
   }, [refreshEbayStatus, refreshSubscription]);
 
   async function handleConnectEbay() {
@@ -76,70 +81,83 @@ export default function Settings() {
     }
   }
 
+  function handleSignOut() {
+    Alert.alert('Sign out', 'Are you sure you want to sign out?', [
+      { text: 'Cancel', style: 'cancel' },
+      { text: 'Sign Out', style: 'destructive', onPress: signOut },
+    ]);
+  }
+
   return (
-    <View style={styles.container}>
+    <ScrollView contentContainerStyle={styles.container}>
       <Text style={styles.title}>Settings</Text>
       <Text style={styles.subtitle}>{session?.user.email}</Text>
 
-      <View style={styles.section}>
-        <Text style={styles.sectionTitle}>Subscription</Text>
-        <Text style={styles.subscriptionStatus}>{subscriptionTier === 'pro' ? 'Pro' : 'Free'} plan</Text>
-        {subscriptionTier === 'pro' ? (
-          <Pressable
-            style={[styles.button, styles.ebayButton]}
-            onPress={handleManageBilling}
-            disabled={billingLoading}
-          >
-            {billingLoading ? (
-              <ActivityIndicator color="#fff" />
+      {profileLoading ? (
+        <ActivityIndicator style={styles.profileLoader} />
+      ) : (
+        <>
+          <View style={styles.section}>
+            <Text style={styles.sectionTitle}>Subscription</Text>
+            <Text style={styles.subscriptionStatus}>{subscriptionTier === 'pro' ? 'Pro' : 'Free'} plan</Text>
+            {subscriptionTier === 'pro' ? (
+              <Pressable
+                style={[styles.button, styles.primaryButton]}
+                onPress={handleManageBilling}
+                disabled={billingLoading}
+              >
+                {billingLoading ? (
+                  <ActivityIndicator color="#fff" />
+                ) : (
+                  <Text style={styles.buttonText}>Manage Subscription</Text>
+                )}
+              </Pressable>
             ) : (
-              <Text style={styles.buttonText}>Manage Subscription</Text>
+              <Pressable
+                style={[styles.button, styles.primaryButton]}
+                onPress={handleUpgrade}
+                disabled={billingLoading}
+              >
+                {billingLoading ? (
+                  <ActivityIndicator color="#fff" />
+                ) : (
+                  <Text style={styles.buttonText}>Upgrade to Pro</Text>
+                )}
+              </Pressable>
             )}
-          </Pressable>
-        ) : (
-          <Pressable
-            style={[styles.button, styles.ebayButton]}
-            onPress={handleUpgrade}
-            disabled={billingLoading}
-          >
-            {billingLoading ? (
-              <ActivityIndicator color="#fff" />
-            ) : (
-              <Text style={styles.buttonText}>Upgrade to Pro</Text>
-            )}
-          </Pressable>
-        )}
-      </View>
+          </View>
 
-      <View style={styles.section}>
-        <Text style={styles.sectionTitle}>eBay account</Text>
-        {ebayConnected ? (
-          <Text style={styles.connected}>✓ Connected</Text>
-        ) : (
-          <Pressable
-            style={[styles.button, styles.ebayButton]}
-            onPress={handleConnectEbay}
-            disabled={connecting}
-          >
-            {connecting ? (
-              <ActivityIndicator color="#fff" />
+          <View style={styles.section}>
+            <Text style={styles.sectionTitle}>eBay account</Text>
+            {ebayConnected ? (
+              <Text style={styles.connected}>✓ Connected</Text>
             ) : (
-              <Text style={styles.buttonText}>Connect eBay</Text>
+              <Pressable
+                style={[styles.button, styles.primaryButton]}
+                onPress={handleConnectEbay}
+                disabled={connecting}
+              >
+                {connecting ? (
+                  <ActivityIndicator color="#fff" />
+                ) : (
+                  <Text style={styles.buttonText}>Connect eBay</Text>
+                )}
+              </Pressable>
             )}
-          </Pressable>
-        )}
-      </View>
+          </View>
+        </>
+      )}
 
-      <Pressable style={[styles.button, styles.signOutButton]} onPress={signOut}>
+      <Pressable style={[styles.button, styles.signOutButton]} onPress={handleSignOut}>
         <Text style={styles.buttonText}>Sign Out</Text>
       </Pressable>
-    </View>
+    </ScrollView>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
-    flex: 1,
+    flexGrow: 1,
     alignItems: 'center',
     justifyContent: 'center',
     padding: 24,
@@ -154,9 +172,13 @@ const styles = StyleSheet.create({
     color: '#666',
     marginBottom: 24,
   },
+  profileLoader: {
+    marginVertical: 32,
+  },
   section: {
     alignItems: 'center',
     marginBottom: 32,
+    width: '100%',
   },
   sectionTitle: {
     fontSize: 16,
@@ -175,14 +197,15 @@ const styles = StyleSheet.create({
     borderRadius: 8,
     paddingVertical: 12,
     paddingHorizontal: 24,
-    minWidth: 160,
+    minWidth: 200,
     alignItems: 'center',
   },
-  ebayButton: {
+  primaryButton: {
     backgroundColor: '#111',
   },
   signOutButton: {
     backgroundColor: '#d33',
+    marginTop: 8,
   },
   buttonText: {
     color: '#fff',

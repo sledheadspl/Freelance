@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState } from 'react';
-import { ActivityIndicator, RefreshControl, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { ActivityIndicator, Pressable, RefreshControl, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { useRouter } from 'expo-router';
 
 import { useAuth } from '../../src/contexts/AuthContext';
 import { FREE_TIER_MONTHLY_SCANS, getDashboardStats, type DashboardStats } from '../../src/lib/dashboard';
@@ -7,6 +8,7 @@ import { formatCurrency } from '../../src/lib/scanDisplay';
 
 export default function Dashboard() {
   const { session } = useAuth();
+  const router = useRouter();
   const [stats, setStats] = useState<DashboardStats | null>(null);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -50,6 +52,10 @@ export default function Dashboard() {
     >
       {error ? <Text style={styles.error}>{error}</Text> : null}
 
+      {!stats && !error ? (
+        <Text style={styles.emptyText}>No data yet — start by scanning an item.</Text>
+      ) : null}
+
       {stats ? (
         <>
           <View style={styles.section}>
@@ -65,6 +71,16 @@ export default function Dashboard() {
               />
               <StatCard label="Plan" value={stats.subscriptionTier === 'pro' ? 'Pro' : 'Free'} />
             </View>
+            {stats.subscriptionTier === 'free' &&
+            stats.scansThisMonth >= FREE_TIER_MONTHLY_SCANS - 2 ? (
+              <Pressable style={styles.upgradeBanner} onPress={() => router.push('/(tabs)/settings')}>
+                <Text style={styles.upgradeBannerText}>
+                  {stats.scansThisMonth >= FREE_TIER_MONTHLY_SCANS
+                    ? 'Scan limit reached. Upgrade to Pro for unlimited scans.'
+                    : `${FREE_TIER_MONTHLY_SCANS - stats.scansThisMonth} scan${FREE_TIER_MONTHLY_SCANS - stats.scansThisMonth === 1 ? '' : 's'} remaining this month. Upgrade to Pro →`}
+                </Text>
+              </Pressable>
+            ) : null}
           </View>
 
           <View style={styles.section}>
@@ -89,12 +105,12 @@ export default function Dashboard() {
           <View style={styles.section}>
             <Text style={styles.sectionTitle}>Profit</Text>
             <View style={styles.row}>
-              <StatCard label="Spent" value={formatCurrency(stats.totalSpent)} />
+              <StatCard label="Invested" value={formatCurrency(stats.totalSpent)} />
               <StatCard label="Revenue" value={formatCurrency(stats.totalRevenue)} />
             </View>
             <View style={styles.row}>
               <StatCard
-                label="Net profit"
+                label="Net profit (sold items)"
                 value={formatCurrency(stats.totalProfit)}
                 valueColor={stats.totalProfit >= 0 ? '#1a7f37' : '#cf222e'}
               />
@@ -133,6 +149,23 @@ const styles = StyleSheet.create({
     color: '#d33',
     textAlign: 'center',
     marginBottom: 8,
+  },
+  emptyText: {
+    color: '#999',
+    textAlign: 'center',
+    marginTop: 40,
+  },
+  upgradeBanner: {
+    backgroundColor: '#fff3cd',
+    borderRadius: 8,
+    padding: 12,
+    marginTop: 4,
+  },
+  upgradeBannerText: {
+    color: '#856404',
+    fontSize: 13,
+    fontWeight: '500',
+    textAlign: 'center',
   },
   section: {
     gap: 8,

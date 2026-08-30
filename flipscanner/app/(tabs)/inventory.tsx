@@ -15,6 +15,13 @@ const STATUS_LABELS: Record<InventoryStatus, string> = {
   shipped: 'Shipped',
 };
 
+const STATUS_COLORS: Record<InventoryStatus, { bg: string; text: string }> = {
+  unlisted: { bg: '#f0f0f0', text: '#444' },
+  listed: { bg: '#cfe2ff', text: '#084298' },
+  sold: { bg: '#d1e7dd', text: '#0f5132' },
+  shipped: { bg: '#d1e7dd', text: '#0a3622' },
+};
+
 export default function Inventory() {
   const { session } = useAuth();
   const router = useRouter();
@@ -86,7 +93,7 @@ export default function Inventory() {
         ListEmptyComponent={
           <View style={styles.empty}>
             <Text style={styles.emptyTitle}>No inventory yet</Text>
-            <Text style={styles.emptySubtitle}>Tap &ldquo;I Bought It&rdquo; on a scan to add it here.</Text>
+            <Text style={styles.emptySubtitle}>{`Tap “I Bought It” on a scan to add it here.`}</Text>
           </View>
         }
         renderItem={({ item }) => {
@@ -112,8 +119,10 @@ export default function Inventory() {
                 </View>
               </View>
 
-              <View style={styles.statusBadge}>
-                <Text style={styles.statusBadgeText}>{STATUS_LABELS[item.status]}</Text>
+              <View style={[styles.statusBadge, { backgroundColor: STATUS_COLORS[item.status as InventoryStatus].bg }]}>
+                <Text style={[styles.statusBadgeText, { color: STATUS_COLORS[item.status as InventoryStatus].text }]}>
+                  {STATUS_LABELS[item.status as InventoryStatus]}
+                </Text>
               </View>
             </Pressable>
           );
@@ -207,7 +216,6 @@ const styles = StyleSheet.create({
     fontWeight: '600',
   },
   statusBadge: {
-    backgroundColor: '#f0f0f0',
     borderRadius: 12,
     paddingHorizontal: 10,
     paddingVertical: 4,
@@ -215,6 +223,5 @@ const styles = StyleSheet.create({
   statusBadgeText: {
     fontSize: 12,
     fontWeight: '600',
-    color: '#444',
   },
 });

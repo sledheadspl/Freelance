@@ -127,16 +127,46 @@ export default function ListingDraft() {
   async function handlePublish() {
     if (!item) return;
 
-    setPublishing(true);
-    try {
-      const updated = await publishListing(item.id);
-      setItem({ ...item, ...updated });
-      Alert.alert('Published', 'Your item is now listed on eBay.');
-    } catch (err) {
-      Alert.alert('Error', err instanceof Error ? err.message : 'Failed to publish listing.');
-    } finally {
-      setPublishing(false);
+    const trimmedTitle = title.trim();
+    if (!trimmedTitle) {
+      Alert.alert('Title required', 'Add a listing title before publishing.');
+      return;
     }
+    if (trimmedTitle.length > 80) {
+      Alert.alert('Title too long', 'eBay titles must be 80 characters or fewer.');
+      return;
+    }
+
+    Alert.alert(
+      'Publish to eBay',
+      'This will save your current draft and create a live listing. Continue?',
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Publish',
+          style: 'default',
+          onPress: async () => {
+            setPublishing(true);
+            try {
+              // Auto-save current form values before publishing so live listing matches UI.
+              const listedPrice = priceInput.trim() ? parseFloat(priceInput) : null;
+              await updateListingDraft(item.id, {
+                listing_title: trimmedTitle,
+                listing_description: description.trim(),
+                listed_price: listedPrice != null && !Number.isNaN(listedPrice) ? listedPrice : null,
+              });
+              const updated = await publishListing(item.id);
+              setItem({ ...item, ...updated });
+              Alert.alert('Published', 'Your item is now listed on eBay.');
+            } catch (err) {
+              Alert.alert('Error', err instanceof Error ? err.message : 'Failed to publish listing.');
+            } finally {
+              setPublishing(false);
+            }
+          },
+        },
+      ]
+    );
   }
 
   if (loading) {
@@ -187,37 +217,42 @@ export default function ListingDraft() {
         <View style={styles.section}>
           <Text style={styles.label}>Title</Text>
           <TextInput
-            style={styles.input}
+            style={[styles.input, item.status !== 'unlisted' ? styles.inputReadOnly : null]}
             value={title}
             onChangeText={setTitle}
             placeholder="eBay listing title (80 chars max)"
             maxLength={80}
+            editable={item.status === 'unlisted'}
           />
           <Text style={styles.charCount}>{title.length}/80</Text>
 
           <Text style={styles.label}>Description</Text>
           <TextInput
-            style={[styles.input, styles.textArea]}
+            style={[styles.input, styles.textArea, item.status !== 'unlisted' ? styles.inputReadOnly : null]}
             value={description}
             onChangeText={setDescription}
             placeholder="Listing description"
             multiline
             numberOfLines={6}
+            editable={item.status === 'unlisted'}
           />
 
           <Text style={styles.label}>Listing price</Text>
           <TextInput
-            style={styles.input}
+            style={[styles.input, item.status !== 'unlisted' ? styles.inputReadOnly : null]}
             value={priceInput}
             onChangeText={setPriceInput}
             placeholder="0.00"
             keyboardType="decimal-pad"
+            editable={item.status === 'unlisted'}
           />
         </View>
 
-        <Pressable style={[styles.button, styles.saveButton]} onPress={handleSave} disabled={saving}>
-          {saving ? <ActivityIndicator color="#fff" /> : <Text style={styles.buttonText}>Save Draft</Text>}
-        </Pressable>
+        {item.status === 'unlisted' ? (
+          <Pressable style={[styles.button, styles.saveButton]} onPress={handleSave} disabled={saving}>
+            {saving ? <ActivityIndicator color="#fff" /> : <Text style={styles.buttonText}>Save Draft</Text>}
+          </Pressable>
+        ) : null}
 
         {item.status === 'unlisted' ? (
           <Pressable
@@ -296,6 +331,10 @@ const styles = StyleSheet.create({
     borderRadius: 8,
     padding: 12,
     fontSize: 16,
+  },
+  inputReadOnly: {
+    backgroundColor: '#f6f6f6',
+    color: '#666',
   },
   textArea: {
     minHeight: 120,

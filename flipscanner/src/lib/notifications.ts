@@ -16,6 +16,13 @@ export async function registerForPushNotifications(userId: string): Promise<void
     return;
   }
 
+  if (Platform.OS === 'android') {
+    await Notifications.setNotificationChannelAsync('default', {
+      name: 'Default',
+      importance: Notifications.AndroidImportance.MAX,
+    });
+  }
+
   const { status: existingStatus } = await Notifications.getPermissionsAsync();
   let status = existingStatus;
   if (status !== 'granted') {

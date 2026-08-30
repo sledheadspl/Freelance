@@ -24,6 +24,7 @@ export default function Scan() {
   const cameraRef = useRef<CameraView>(null);
   const [photoUri, setPhotoUri] = useState<string | null>(null);
   const [askingPrice, setAskingPrice] = useState('');
+  const [capturing, setCapturing] = useState(false);
   const [submitting, setSubmitting] = useState(false);
 
   if (!permission) {
@@ -42,9 +43,17 @@ export default function Scan() {
   }
 
   const takePicture = async () => {
-    const photo = await cameraRef.current?.takePictureAsync({ quality: 0.6 });
-    if (photo) {
-      setPhotoUri(photo.uri);
+    if (capturing) return;
+    setCapturing(true);
+    try {
+      const photo = await cameraRef.current?.takePictureAsync({ quality: 0.6 });
+      if (photo) {
+        setPhotoUri(photo.uri);
+      }
+    } catch {
+      // Camera hardware error — stay on viewfinder.
+    } finally {
+      setCapturing(false);
     }
   };
 
@@ -114,7 +123,11 @@ export default function Scan() {
     <View style={styles.container}>
       <CameraView ref={cameraRef} style={styles.camera} facing="back" />
       <View style={styles.captureBar}>
-        <Pressable style={styles.captureButton} onPress={takePicture} />
+        <Pressable
+          style={[styles.captureButton, capturing ? styles.captureButtonDisabled : null]}
+          onPress={takePicture}
+          disabled={capturing}
+        />
       </View>
     </View>
   );
@@ -152,6 +165,9 @@ const styles = StyleSheet.create({
     borderWidth: 4,
     borderColor: '#fff',
     backgroundColor: 'rgba(255,255,255,0.3)',
+  },
+  captureButtonDisabled: {
+    opacity: 0.4,
   },
   previewBar: {
     position: 'absolute',

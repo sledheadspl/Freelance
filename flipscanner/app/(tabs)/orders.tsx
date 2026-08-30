@@ -14,6 +14,21 @@ const STATUS_LABELS: Record<OrderStatus, string> = {
   cancelled: 'Cancelled',
 };
 
+const STATUS_COLORS: Record<OrderStatus, { bg: string; text: string }> = {
+  awaiting_shipment: { bg: '#fff3cd', text: '#856404' },
+  shipped: { bg: '#cfe2ff', text: '#084298' },
+  delivered: { bg: '#d1e7dd', text: '#0f5132' },
+  cancelled: { bg: '#f8d7da', text: '#842029' },
+};
+
+function formatShipByDate(dateStr: string): string {
+  const [year, month, day] = dateStr.split('-').map(Number);
+  return new Date(year, month - 1, day).toLocaleDateString(undefined, {
+    month: 'short',
+    day: 'numeric',
+  });
+}
+
 export default function Orders() {
   const { session } = useAuth();
   const [orders, setOrders] = useState<OrderWithItem[]>([]);
@@ -115,12 +130,16 @@ export default function Orders() {
                   {item.inventory?.sold_price != null ? (
                     <Text style={styles.rowPrice}>Sold {formatCurrency(item.inventory.sold_price)}</Text>
                   ) : null}
-                  {item.ship_by ? <Text style={styles.rowDate}>Ship by {item.ship_by}</Text> : null}
+                  {item.ship_by ? (
+                    <Text style={styles.rowDate}>Ship by {formatShipByDate(item.ship_by)}</Text>
+                  ) : null}
                 </View>
               </View>
 
-              <View style={styles.statusBadge}>
-                <Text style={styles.statusBadgeText}>{STATUS_LABELS[item.status]}</Text>
+              <View style={[styles.statusBadge, { backgroundColor: STATUS_COLORS[item.status as OrderStatus].bg }]}>
+                <Text style={[styles.statusBadgeText, { color: STATUS_COLORS[item.status as OrderStatus].text }]}>
+                  {STATUS_LABELS[item.status as OrderStatus]}
+                </Text>
               </View>
             </View>
           );
@@ -213,7 +232,6 @@ const styles = StyleSheet.create({
     fontSize: 12,
   },
   statusBadge: {
-    backgroundColor: '#f0f0f0',
     borderRadius: 12,
     paddingHorizontal: 10,
     paddingVertical: 4,
@@ -221,6 +239,5 @@ const styles = StyleSheet.create({
   statusBadgeText: {
     fontSize: 12,
     fontWeight: '600',
-    color: '#444',
   },
 });
