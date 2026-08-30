@@ -1,0 +1,9 @@
+# eBay redirects here directly (no Supabase auth header), so JWT
+# verification must be disabled for this function only.
+[functions.ebay-oauth-callback]
+verify_jwt = false
+
+# Stripe calls this directly (no Supabase auth header); authenticity is
+# verified via the Stripe-Signature header instead.
+[functions.stripe-webhook]
+verify_jwt = false
