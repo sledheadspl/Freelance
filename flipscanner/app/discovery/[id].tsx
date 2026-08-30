@@ -1,6 +1,6 @@
 import { useLocalSearchParams } from 'expo-router';
 import { useEffect, useState } from 'react';
-import { ActivityIndicator, Image, ScrollView, StyleSheet, Switch, Text, View } from 'react-native';
+import { ActivityIndicator, Alert, Image, ScrollView, StyleSheet, Switch, Text, View } from 'react-native';
 
 import { setDiscoveryShared, type DiscoveryRow } from '../../src/lib/discovery';
 import { GradeBadge, formatCurrency } from '../../src/lib/scanDisplay';
@@ -62,7 +62,7 @@ export default function DiscoveryResult() {
       await setDiscoveryShared(discovery.id, value);
       setDiscovery({ ...discovery, shared: value });
     } catch {
-      // Leave the switch in its previous state on failure.
+      Alert.alert('Error', 'Could not update sharing preference. Please try again.');
     } finally {
       setSharedUpdating(false);
     }

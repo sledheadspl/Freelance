@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from 'react';
-import { ActivityIndicator, Alert, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { ActivityIndicator, Alert, Linking, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 
 import { useAuth } from '../../src/contexts/AuthContext';
 import { openBillingPortal, startProCheckout } from '../../src/lib/billing';
@@ -49,7 +49,13 @@ export default function Settings() {
     setConnecting(true);
     try {
       await connectEbayAccount();
-      await refreshEbayStatus();
+      // The OAuth callback edge function writes the token asynchronously after
+      // the browser redirects. Retry a few times to handle the write delay.
+      for (let i = 0; i < 4; i++) {
+        await new Promise((resolve) => setTimeout(resolve, 1000));
+        await refreshEbayStatus();
+        if (ebayConnected) break;
+      }
     } catch (err) {
       Alert.alert('Error', err instanceof Error ? err.message : 'Failed to connect eBay account.');
     } finally {
@@ -148,6 +154,15 @@ export default function Settings() {
         </>
       )}
 
+      <Pressable
+        style={styles.privacyLink}
+        onPress={() => Linking.openURL('https://claude.ai/code/artifact/84047eb3-15f3-4a92-875e-2f0bab7b8e54')}
+        accessibilityRole="link"
+        accessibilityLabel="Privacy Policy"
+      >
+        <Text style={styles.privacyLinkText}>Privacy Policy</Text>
+      </Pressable>
+
       <Pressable style={[styles.button, styles.signOutButton]} onPress={handleSignOut}>
         <Text style={styles.buttonText}>Sign Out</Text>
       </Pressable>
@@ -211,5 +226,13 @@ const styles = StyleSheet.create({
     color: '#fff',
     fontSize: 16,
     fontWeight: '600',
+  },
+  privacyLink: {
+    marginBottom: 16,
+  },
+  privacyLinkText: {
+    color: '#666',
+    fontSize: 13,
+    textDecorationLine: 'underline',
   },
 });

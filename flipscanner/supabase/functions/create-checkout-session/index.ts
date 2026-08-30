@@ -1,6 +1,6 @@
 import { corsHeaders, jsonResponse } from '../_shared/cors.ts';
 import { getUserClient } from '../_shared/supabaseClient.ts';
-import { createCheckoutSession, getOrCreateCustomer } from '../_shared/stripe.ts';
+import { createCheckoutSession, createCustomer } from '../_shared/stripe.ts';
 
 const CHECKOUT_RETURN_URL = 'flipscanner://billing-callback';
 
@@ -44,7 +44,7 @@ Deno.serve(async (req) => {
 
   try {
     if (!customerId) {
-      customerId = await getOrCreateCustomer(user.id, user.email ?? null);
+      customerId = await createCustomer(user.id, user.email ?? null);
       const { error: updateError } = await userClient
         .from('profiles')
         .update({ stripe_customer_id: customerId })

@@ -29,8 +29,8 @@ interface StripeCustomer {
   id: string;
 }
 
-/** Finds or creates a Stripe customer for the given Supabase user, returning its id. */
-export async function getOrCreateCustomer(userId: string, email: string | null): Promise<string> {
+/** Creates a Stripe customer for the given Supabase user, returning its id. */
+export async function createCustomer(userId: string, email: string | null): Promise<string> {
   const params: Record<string, string> = { 'metadata[supabase_user_id]': userId };
   if (email) {
     params.email = email;

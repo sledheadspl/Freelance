@@ -55,12 +55,16 @@ export async function requestDiscoveryIdentification(
 }
 
 /** Lists the user's discoveries, newest first. */
-export async function listDiscoveries(userId: string): Promise<DiscoveryRow[]> {
+export async function listDiscoveries(
+  userId: string,
+  { limit = 30, offset = 0 }: { limit?: number; offset?: number } = {}
+): Promise<DiscoveryRow[]> {
   const { data, error } = await supabase
     .from('discoveries')
     .select('*')
     .eq('user_id', userId)
-    .order('created_at', { ascending: false });
+    .order('created_at', { ascending: false })
+    .range(offset, offset + limit - 1);
 
   if (error) {
     throw new Error(error.message);

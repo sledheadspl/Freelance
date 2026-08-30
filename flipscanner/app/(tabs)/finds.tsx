@@ -1,5 +1,5 @@
 import { useRouter } from 'expo-router';
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { ActivityIndicator, FlatList, Image, Pressable, RefreshControl, StyleSheet, Text, View } from 'react-native';
 
 import { useAuth } from '../../src/contexts/AuthContext';
@@ -15,41 +15,68 @@ export default function Finds() {
   const [discoveries, setDiscoveries] = useState<DiscoveryRow[]>([]);
   const [imageUrls, setImageUrls] = useState<Record<string, string>>({});
   const [loading, setLoading] = useState(true);
+  const [loadingMore, setLoadingMore] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
+  const [hasMore, setHasMore] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const offsetRef = useRef(0);
+  const loadIdRef = useRef(0);
+
+  const addImageUrls = useCallback(async (newItems: DiscoveryRow[], replace: boolean) => {
+    const paths = newItems.map((d) => d.image_url).filter((p): p is string => !!p);
+    if (paths.length === 0) {
+      if (replace) setImageUrls({});
+      return;
+    }
+    const { data: signed } = await supabase.storage.from('scan-images').createSignedUrls(paths, 60 * 60 * 24 * 7);
+    if (signed) {
+      const urlMap: Record<string, string> = {};
+      signed.forEach((entry) => {
+        if (entry.signedUrl && entry.path) urlMap[entry.path] = entry.signedUrl;
+      });
+      setImageUrls((prev) => (replace ? urlMap : { ...prev, ...urlMap }));
+    }
+  }, []);
 
   const load = useCallback(async () => {
     if (!session) return;
-
+    const myId = ++loadIdRef.current;
+    offsetRef.current = 0;
+    setLoading(true);
     try {
-      const data = (await listDiscoveries(session.user.id)).slice(0, PAGE_SIZE);
+      const data = await listDiscoveries(session.user.id, { limit: PAGE_SIZE, offset: 0 });
+      if (loadIdRef.current !== myId) return;
       setError(null);
       setDiscoveries(data);
-
-      const paths = data.map((d) => d.image_url).filter((path): path is string => !!path);
-
-      if (paths.length > 0) {
-        const { data: signed } = await supabase.storage.from('scan-images').createSignedUrls(paths, 60 * 60 * 24 * 7);
-        if (signed) {
-          const urlMap: Record<string, string> = {};
-          signed.forEach((entry) => {
-            if (entry.signedUrl && entry.path) {
-              urlMap[entry.path] = entry.signedUrl;
-            }
-          });
-          setImageUrls(urlMap);
-        }
-      } else {
-        setImageUrls({});
-      }
+      setHasMore(data.length === PAGE_SIZE);
+      await addImageUrls(data, true);
     } catch (err) {
+      if (loadIdRef.current !== myId) return;
       setError(err instanceof Error ? err.message : 'Failed to load finds.');
+    } finally {
+      if (loadIdRef.current === myId) setLoading(false);
     }
-  }, [session]);
+  }, [session, addImageUrls]);
+
+  const loadMore = useCallback(async () => {
+    if (!session || loadingMore || !hasMore) return;
+    const nextOffset = offsetRef.current + PAGE_SIZE;
+    setLoadingMore(true);
+    try {
+      const data = await listDiscoveries(session.user.id, { limit: PAGE_SIZE, offset: nextOffset });
+      offsetRef.current = nextOffset;
+      setDiscoveries((prev) => [...prev, ...data]);
+      setHasMore(data.length === PAGE_SIZE);
+      await addImageUrls(data, false);
+    } catch {
+      // Silent — user can scroll to retry.
+    } finally {
+      setLoadingMore(false);
+    }
+  }, [session, hasMore, loadingMore, addImageUrls]);
 
   useEffect(() => {
-    setLoading(true);
-    load().finally(() => setLoading(false));
+    load();
   }, [load]);
 
   const onRefresh = async () => {
@@ -75,6 +102,15 @@ export default function Finds() {
         keyExtractor={(item) => item.id}
         contentContainerStyle={discoveries.length === 0 ? styles.emptyContent : styles.listContent}
         refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
+        onEndReached={loadMore}
+        onEndReachedThreshold={0.3}
+        ListFooterComponent={
+          loadingMore ? (
+            <View style={styles.footerLoader}>
+              <ActivityIndicator size="small" />
+            </View>
+          ) : null
+        }
         ListEmptyComponent={
           <View style={styles.empty}>
             <Text style={styles.emptyTitle}>No finds yet</Text>
@@ -203,5 +239,9 @@ const styles = StyleSheet.create({
     color: '#999',
     fontSize: 12,
     marginLeft: 'auto',
+  },
+  footerLoader: {
+    paddingVertical: 16,
+    alignItems: 'center',
   },
 });

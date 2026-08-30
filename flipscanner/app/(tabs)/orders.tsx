@@ -1,6 +1,6 @@
 import { useRouter } from 'expo-router';
 import { useCallback, useEffect, useState } from 'react';
-import { ActivityIndicator, FlatList, Image, Pressable, RefreshControl, StyleSheet, Text, View } from 'react-native';
+import { ActivityIndicator, Alert, FlatList, Image, Pressable, RefreshControl, StyleSheet, Text, View } from 'react-native';
 
 import { useAuth } from '../../src/contexts/AuthContext';
 import { listOrders, syncOrders, type OrderWithItem } from '../../src/lib/orders';
@@ -80,7 +80,7 @@ export default function Orders() {
     try {
       await syncOrders();
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to sync orders.');
+      Alert.alert('Sync error', err instanceof Error ? err.message : 'Failed to sync orders with eBay.');
     }
     await load();
     setRefreshing(false);
