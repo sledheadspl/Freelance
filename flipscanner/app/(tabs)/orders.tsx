@@ -1,5 +1,6 @@
+import { useRouter } from 'expo-router';
 import { useCallback, useEffect, useState } from 'react';
-import { ActivityIndicator, FlatList, Image, RefreshControl, StyleSheet, Text, View } from 'react-native';
+import { ActivityIndicator, FlatList, Image, Pressable, RefreshControl, StyleSheet, Text, View } from 'react-native';
 
 import { useAuth } from '../../src/contexts/AuthContext';
 import { listOrders, syncOrders, type OrderWithItem } from '../../src/lib/orders';
@@ -31,6 +32,7 @@ function formatShipByDate(dateStr: string): string {
 
 export default function Orders() {
   const { session } = useAuth();
+  const router = useRouter();
   const [orders, setOrders] = useState<OrderWithItem[]>([]);
   const [imageUrls, setImageUrls] = useState<Record<string, string>>({});
   const [loading, setLoading] = useState(true);
@@ -112,7 +114,7 @@ export default function Orders() {
         renderItem={({ item }) => {
           const imagePath = item.inventory?.scans?.image_url;
           return (
-            <View style={styles.row}>
+            <Pressable style={styles.row} onPress={() => router.push(`/orders/${item.id}`)}>
               {imagePath && imageUrls[imagePath] ? (
                 <Image source={{ uri: imageUrls[imagePath] }} style={styles.thumbnail} />
               ) : (
@@ -141,7 +143,7 @@ export default function Orders() {
                   {STATUS_LABELS[item.status as OrderStatus]}
                 </Text>
               </View>
-            </View>
+            </Pressable>
           );
         }}
       />

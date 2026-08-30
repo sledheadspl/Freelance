@@ -1,5 +1,5 @@
 import { useRouter } from 'expo-router';
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import {
   ActivityIndicator,
   FlatList,
@@ -17,7 +17,6 @@ import { supabase } from '../../src/lib/supabase';
 import type { Database, Recommendation } from '../../src/types/database';
 
 type ScanRow = Database['public']['Tables']['scans']['Row'];
-
 type Filter = 'all' | Recommendation;
 
 const FILTERS: { value: Filter; label: string }[] = [
@@ -36,57 +35,95 @@ export default function History() {
   const [imageUrls, setImageUrls] = useState<Record<string, string>>({});
   const [filter, setFilter] = useState<Filter>('all');
   const [loading, setLoading] = useState(true);
+  const [loadingMore, setLoadingMore] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
+  const [hasMore, setHasMore] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const offsetRef = useRef(0);
+  const loadIdRef = useRef(0);
 
-  const load = useCallback(
-    async (currentFilter: Filter) => {
-      if (!session) return;
+  const fetchPage = useCallback(
+    async (currentFilter: Filter, offset: number): Promise<ScanRow[]> => {
+      if (!session) return [];
 
       let query = supabase
         .from('scans')
         .select('*')
         .eq('user_id', session.user.id)
         .order('created_at', { ascending: false })
-        .limit(PAGE_SIZE);
+        .range(offset, offset + PAGE_SIZE - 1);
 
       if (currentFilter !== 'all') {
         query = query.eq('recommendation', currentFilter);
       }
 
       const { data, error: fetchError } = await query;
-
-      if (fetchError) {
-        setError(fetchError.message);
-        return;
-      }
-
-      setError(null);
-      setScans(data ?? []);
-
-      const paths = (data ?? []).map((scan) => scan.image_url).filter((path): path is string => !!path);
-
-      if (paths.length > 0) {
-        const { data: signed } = await supabase.storage.from('scan-images').createSignedUrls(paths, 60 * 60);
-        if (signed) {
-          const urlMap: Record<string, string> = {};
-          signed.forEach((entry) => {
-            if (entry.signedUrl && entry.path) {
-              urlMap[entry.path] = entry.signedUrl;
-            }
-          });
-          setImageUrls(urlMap);
-        }
-      } else {
-        setImageUrls({});
-      }
+      if (fetchError) throw new Error(fetchError.message);
+      return data ?? [];
     },
     [session]
   );
 
+  const addImageUrls = useCallback(async (newScans: ScanRow[], replace: boolean) => {
+    const paths = newScans.map((s) => s.image_url).filter((p): p is string => !!p);
+    if (paths.length === 0) {
+      if (replace) setImageUrls({});
+      return;
+    }
+    const { data: signed } = await supabase.storage
+      .from('scan-images')
+      .createSignedUrls(paths, 60 * 60);
+    if (signed) {
+      const urlMap: Record<string, string> = {};
+      signed.forEach((entry) => {
+        if (entry.signedUrl && entry.path) urlMap[entry.path] = entry.signedUrl;
+      });
+      setImageUrls((prev) => (replace ? urlMap : { ...prev, ...urlMap }));
+    }
+  }, []);
+
+  const load = useCallback(
+    async (currentFilter: Filter) => {
+      if (!session) return;
+      const myId = ++loadIdRef.current;
+      offsetRef.current = 0;
+      setLoading(true);
+      try {
+        const data = await fetchPage(currentFilter, 0);
+        if (loadIdRef.current !== myId) return;
+        setError(null);
+        setScans(data);
+        setHasMore(data.length === PAGE_SIZE);
+        await addImageUrls(data, true);
+      } catch (err) {
+        if (loadIdRef.current !== myId) return;
+        setError(err instanceof Error ? err.message : 'Failed to load history.');
+      } finally {
+        if (loadIdRef.current === myId) setLoading(false);
+      }
+    },
+    [session, fetchPage, addImageUrls]
+  );
+
+  const loadMore = useCallback(async () => {
+    if (!session || loadingMore || !hasMore) return;
+    const nextOffset = offsetRef.current + PAGE_SIZE;
+    setLoadingMore(true);
+    try {
+      const data = await fetchPage(filter, nextOffset);
+      offsetRef.current = nextOffset;
+      setScans((prev) => [...prev, ...data]);
+      setHasMore(data.length === PAGE_SIZE);
+      await addImageUrls(data, false);
+    } catch {
+      // Silent — user can scroll down again to retry.
+    } finally {
+      setLoadingMore(false);
+    }
+  }, [session, filter, hasMore, loadingMore, fetchPage, addImageUrls]);
+
   useEffect(() => {
-    setLoading(true);
-    load(filter).finally(() => setLoading(false));
+    load(filter);
   }, [filter, load]);
 
   const onRefresh = async () => {
@@ -126,11 +163,20 @@ export default function History() {
         keyExtractor={(item) => item.id}
         contentContainerStyle={scans.length === 0 ? styles.emptyContent : styles.listContent}
         refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
+        onEndReached={loadMore}
+        onEndReachedThreshold={0.3}
         ListEmptyComponent={
           <View style={styles.empty}>
             <Text style={styles.emptyTitle}>No scans yet</Text>
             <Text style={styles.emptySubtitle}>Scan an item to see it show up here.</Text>
           </View>
+        }
+        ListFooterComponent={
+          loadingMore ? (
+            <View style={styles.footerLoader}>
+              <ActivityIndicator size="small" />
+            </View>
+          ) : null
         }
         renderItem={({ item }) => (
           <Pressable style={styles.row} onPress={() => router.push(`/scan/${item.id}`)}>
@@ -264,5 +310,9 @@ const styles = StyleSheet.create({
     color: '#999',
     fontSize: 12,
     marginLeft: 'auto',
+  },
+  footerLoader: {
+    paddingVertical: 16,
+    alignItems: 'center',
   },
 });

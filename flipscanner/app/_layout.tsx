@@ -13,6 +13,7 @@ export default function RootLayout() {
           <Stack.Screen name="scan" options={{ presentation: 'modal' }} />
           <Stack.Screen name="discovery" options={{ presentation: 'modal' }} />
           <Stack.Screen name="inventory" options={{ presentation: 'modal' }} />
+          <Stack.Screen name="orders" options={{ presentation: 'modal' }} />
         </Stack>
       </AuthProvider>
     </SafeAreaProvider>
