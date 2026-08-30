@@ -1,11 +1,17 @@
 import { getServiceClient } from '../_shared/supabaseClient.ts';
 import { exchangeCodeForTokens, verifyOAuthState } from '../_shared/ebayOAuth.ts';
 
-const APP_RETURN_URL = 'flipscanner://ebay-callback';
+Deno.serve(async (req) => {
+  const url = new URL(req.url);
+  const code = url.searchParams.get('code');
+  const state = url.searchParams.get('state');
 
-function htmlResponse(status: 'success' | 'error', message: string): Response {
-  const redirectUrl = `${APP_RETURN_URL}?status=${status}`;
-  const body = `<!DOCTYPE html>
+  // appReturnUrl is resolved from the signed state; default covers old tokens in the wild.
+  let appReturnUrl = 'flipscanner://ebay-callback';
+
+  function htmlResponse(status: 'success' | 'error', message: string): Response {
+    const redirectUrl = `${appReturnUrl}?status=${status}`;
+    const body = `<!DOCTYPE html>
 <html>
   <head><meta http-equiv="refresh" content="0; url=${redirectUrl}" /></head>
   <body>
@@ -13,17 +19,8 @@ function htmlResponse(status: 'success' | 'error', message: string): Response {
     <p><a href="${redirectUrl}">Return to FlipScanner</a></p>
   </body>
 </html>`;
-
-  return new Response(body, {
-    status: 200,
-    headers: { 'Content-Type': 'text/html' },
-  });
-}
-
-Deno.serve(async (req) => {
-  const url = new URL(req.url);
-  const code = url.searchParams.get('code');
-  const state = url.searchParams.get('state');
+    return new Response(body, { status: 200, headers: { 'Content-Type': 'text/html' } });
+  }
 
   if (!code || !state) {
     return htmlResponse('error', 'Missing authorization code or state.');
@@ -31,7 +28,9 @@ Deno.serve(async (req) => {
 
   let userId: string;
   try {
-    userId = await verifyOAuthState(state);
+    const payload = await verifyOAuthState(state);
+    userId = payload.userId;
+    appReturnUrl = payload.returnUrl;
   } catch (error) {
     console.error('eBay OAuth state verification failed', error);
     return htmlResponse('error', 'This connection link is invalid or has expired. Please try again from the app.');

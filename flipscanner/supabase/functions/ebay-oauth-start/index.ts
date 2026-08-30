@@ -2,6 +2,8 @@ import { corsHeaders, jsonResponse } from '../_shared/cors.ts';
 import { getUserClient } from '../_shared/supabaseClient.ts';
 import { buildAuthorizationUrl } from '../_shared/ebayOAuth.ts';
 
+const DEFAULT_RETURN_URL = 'flipscanner://ebay-callback';
+
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response('ok', { headers: corsHeaders });
@@ -22,8 +24,16 @@ Deno.serve(async (req) => {
     return jsonResponse({ error: 'Invalid or expired session' }, { status: 401 });
   }
 
+  let returnUrl = DEFAULT_RETURN_URL;
   try {
-    const url = await buildAuthorizationUrl(userData.user.id);
+    const body = await req.json();
+    if (typeof body?.returnUrl === 'string' && body.returnUrl.startsWith('https://')) {
+      returnUrl = body.returnUrl;
+    }
+  } catch { /* body is optional */ }
+
+  try {
+    const url = await buildAuthorizationUrl(userData.user.id, returnUrl);
     return jsonResponse({ url }, { status: 200 });
   } catch (error) {
     return jsonResponse(

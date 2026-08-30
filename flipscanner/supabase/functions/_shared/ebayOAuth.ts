@@ -59,17 +59,23 @@ async function getStateSigningKey(): Promise<CryptoKey> {
   );
 }
 
-/** Signs an opaque state token binding the OAuth flow to a user id, with a short expiry. */
-export async function signOAuthState(userId: string): Promise<string> {
+/** Signs an opaque state token binding the OAuth flow to a user id, with a short expiry.
+ *  returnUrl is where the callback edge function redirects the browser after processing. */
+export async function signOAuthState(userId: string, returnUrl: string): Promise<string> {
   const key = await getStateSigningKey();
-  const payload = JSON.stringify({ userId, exp: Date.now() + 10 * 60 * 1000 });
+  const payload = JSON.stringify({ userId, returnUrl, exp: Date.now() + 10 * 60 * 1000 });
   const payloadBytes = new TextEncoder().encode(payload);
   const signature = await crypto.subtle.sign('HMAC', key, payloadBytes);
   return `${base64UrlEncode(payloadBytes)}.${base64UrlEncode(new Uint8Array(signature))}`;
 }
 
-/** Verifies a state token produced by signOAuthState, returning the bound user id. */
-export async function verifyOAuthState(state: string): Promise<string> {
+export interface OAuthStatePayload {
+  userId: string;
+  returnUrl: string;
+}
+
+/** Verifies a state token produced by signOAuthState, returning the payload. */
+export async function verifyOAuthState(state: string): Promise<OAuthStatePayload> {
   const [payloadPart, signaturePart] = state.split('.');
   if (!payloadPart || !signaturePart) {
     throw new Error('Malformed state');
@@ -84,23 +90,24 @@ export async function verifyOAuthState(state: string): Promise<string> {
     throw new Error('Invalid state signature');
   }
 
-  const payload = JSON.parse(new TextDecoder().decode(payloadBytes)) as { userId: string; exp: number };
+  const payload = JSON.parse(new TextDecoder().decode(payloadBytes)) as { userId: string; returnUrl?: string; exp: number };
   if (Date.now() > payload.exp) {
     throw new Error('State expired');
   }
 
-  return payload.userId;
+  return { userId: payload.userId, returnUrl: payload.returnUrl ?? 'flipscanner://ebay-callback' };
 }
 
-/** Builds the eBay consent screen URL for the authorization code grant. */
-export async function buildAuthorizationUrl(userId: string): Promise<string> {
+/** Builds the eBay consent screen URL for the authorization code grant.
+ *  appReturnUrl is where the browser is redirected after the callback processes the code. */
+export async function buildAuthorizationUrl(userId: string, appReturnUrl: string): Promise<string> {
   const clientId = Deno.env.get('EBAY_CLIENT_ID');
   const redirectUri = Deno.env.get('EBAY_OAUTH_REDIRECT_URI');
   if (!clientId || !redirectUri) {
     throw new Error('EBAY_CLIENT_ID / EBAY_OAUTH_REDIRECT_URI are not configured');
   }
 
-  const state = await signOAuthState(userId);
+  const state = await signOAuthState(userId, appReturnUrl);
   const params = new URLSearchParams({
     client_id: clientId,
     redirect_uri: redirectUri,

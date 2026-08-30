@@ -1,8 +1,12 @@
 import * as WebBrowser from 'expo-web-browser';
+import { Platform } from 'react-native';
 
 import { supabase } from './supabase';
 
-const EBAY_RETURN_URL = 'flipscanner://ebay-callback';
+const EBAY_RETURN_URL =
+  Platform.OS === 'web'
+    ? 'https://flip.screwedscore.com/ebay-callback'
+    : 'flipscanner://ebay-callback';
 
 interface EbayOAuthStartResponse {
   url: string;
@@ -27,6 +31,7 @@ export async function getEbayConnected(userId: string): Promise<boolean> {
 export async function connectEbayAccount(): Promise<boolean> {
   const { data, error } = await supabase.functions.invoke<EbayOAuthStartResponse>('ebay-oauth-start', {
     method: 'POST',
+    body: { returnUrl: EBAY_RETURN_URL },
   });
 
   if (error) {
@@ -39,3 +44,6 @@ export async function connectEbayAccount(): Promise<boolean> {
   const result = await WebBrowser.openAuthSessionAsync(data.url, EBAY_RETURN_URL);
   return result.type === 'success';
 }
+
+// Exported so the ebay-oauth-start call can include the right returnUrl.
+export { EBAY_RETURN_URL };

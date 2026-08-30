@@ -1,8 +1,12 @@
 import * as WebBrowser from 'expo-web-browser';
+import { Platform } from 'react-native';
 
 import { supabase } from './supabase';
 
-const BILLING_RETURN_URL = 'flipscanner://billing-callback';
+const BILLING_RETURN_URL =
+  Platform.OS === 'web'
+    ? 'https://flip.screwedscore.com/billing-callback'
+    : 'flipscanner://billing-callback';
 
 interface BillingUrlResponse {
   url: string;
