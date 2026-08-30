@@ -9,7 +9,9 @@ const requestSchema = z.object({
   inventoryId: z.string().uuid(),
 });
 
-const SIGNED_IMAGE_URL_TTL_SECONDS = 60 * 60 * 24 * 7; // 7 days
+// eBay embeds the URL directly in the listing; use a decade-long TTL so the
+// image doesn't disappear before the sale resolves.
+const SIGNED_IMAGE_URL_TTL_SECONDS = 60 * 60 * 24 * 365 * 10;
 
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') {

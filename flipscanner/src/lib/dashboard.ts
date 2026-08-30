@@ -49,7 +49,7 @@ export async function getDashboardStats(userId: string): Promise<DashboardStats>
   let soldPurchaseCost = 0;
 
   for (const row of inventory) {
-    totalSpent += row.purchase_price;
+    totalSpent += row.purchase_price ?? 0;
 
     switch (row.status) {
       case 'unlisted':
@@ -68,7 +68,7 @@ export async function getDashboardStats(userId: string): Promise<DashboardStats>
 
     if (row.sold_price != null) {
       totalRevenue += row.sold_price;
-      soldPurchaseCost += row.purchase_price;
+      soldPurchaseCost += row.purchase_price ?? 0;
     }
   }
 
