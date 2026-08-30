@@ -60,7 +60,7 @@ export default function ListingDraft() {
     if (row.scans?.image_url) {
       const { data: signed } = await supabase.storage
         .from('scan-images')
-        .createSignedUrl(row.scans.image_url, 60 * 60);
+        .createSignedUrl(row.scans.image_url, 60 * 60 * 24 * 7);
       if (signed) {
         setImageUrl(signed.signedUrl);
       }
@@ -101,8 +101,8 @@ export default function ListingDraft() {
     let listedPrice: number | null = null;
     if (priceInput.trim()) {
       const parsed = parseFloat(priceInput);
-      if (Number.isNaN(parsed) || parsed < 0) {
-        Alert.alert('Invalid price', 'Enter a valid listing price.');
+      if (Number.isNaN(parsed) || parsed < 0.99) {
+        Alert.alert('Invalid price', 'eBay requires a minimum listing price of $0.99.');
         return;
       }
       listedPrice = parsed;

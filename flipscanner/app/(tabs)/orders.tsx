@@ -52,7 +52,7 @@ export default function Orders() {
         .filter((path): path is string => !!path);
 
       if (paths.length > 0) {
-        const { data: signed } = await supabase.storage.from('scan-images').createSignedUrls(paths, 60 * 60);
+        const { data: signed } = await supabase.storage.from('scan-images').createSignedUrls(paths, 60 * 60 * 24 * 7);
         if (signed) {
           const urlMap: Record<string, string> = {};
           signed.forEach((entry) => {
@@ -138,9 +138,9 @@ export default function Orders() {
                 </View>
               </View>
 
-              <View style={[styles.statusBadge, { backgroundColor: STATUS_COLORS[item.status as OrderStatus].bg }]}>
-                <Text style={[styles.statusBadgeText, { color: STATUS_COLORS[item.status as OrderStatus].text }]}>
-                  {STATUS_LABELS[item.status as OrderStatus]}
+              <View style={[styles.statusBadge, { backgroundColor: (STATUS_COLORS[item.status as OrderStatus] ?? STATUS_COLORS.awaiting_shipment).bg }]}>
+                <Text style={[styles.statusBadgeText, { color: (STATUS_COLORS[item.status as OrderStatus] ?? STATUS_COLORS.awaiting_shipment).text }]}>
+                  {STATUS_LABELS[item.status as OrderStatus] ?? item.status}
                 </Text>
               </View>
             </Pressable>

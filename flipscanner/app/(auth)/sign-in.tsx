@@ -20,9 +20,14 @@ export default function SignIn() {
   const [submitting, setSubmitting] = useState(false);
 
   const onSubmit = async () => {
+    const trimmedEmail = email.trim();
+    if (!trimmedEmail) { setError('Please enter your email.'); return; }
+    if (!trimmedEmail.includes('@')) { setError('Enter a valid email address.'); return; }
+    if (!password) { setError('Please enter your password.'); return; }
+
     setError(null);
     setSubmitting(true);
-    const { error: signInError } = await signInWithPassword(email.trim(), password);
+    const { error: signInError } = await signInWithPassword(trimmedEmail, password);
     setSubmitting(false);
     if (signInError) {
       setError(signInError);

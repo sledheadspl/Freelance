@@ -40,7 +40,15 @@ export async function registerForPushNotifications(userId: string): Promise<void
       projectId ? { projectId } : undefined
     );
 
-    await supabase.from('profiles').update({ push_token: token }).eq('id', userId);
+    const { data: profile } = await supabase
+      .from('profiles')
+      .select('push_token')
+      .eq('id', userId)
+      .single();
+
+    if (profile?.push_token !== token) {
+      await supabase.from('profiles').update({ push_token: token }).eq('id', userId);
+    }
   } catch (error) {
     console.warn('Failed to register for push notifications', error);
   }

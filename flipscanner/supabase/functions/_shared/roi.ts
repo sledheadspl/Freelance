@@ -159,7 +159,9 @@ function recommendationFor(
   if (roiPct == null || net == null) return null;
 
   if (roiPct >= 100 && net >= 15 && (grade === 'A' || grade === 'B')) return 'buy';
-  if (roiPct >= 50 || grade === 'C') return 'maybe';
+  if (roiPct >= 50) return 'maybe';
+  // Grade C = low confidence; only promote to 'maybe' if the ROI is at least positive.
+  if (grade === 'C' && roiPct >= 0) return 'maybe';
   return 'skip';
 }
 

@@ -72,7 +72,7 @@ export default function History() {
     }
     const { data: signed } = await supabase.storage
       .from('scan-images')
-      .createSignedUrls(paths, 60 * 60);
+      .createSignedUrls(paths, 60 * 60 * 24 * 7);
     if (signed) {
       const urlMap: Record<string, string> = {};
       signed.forEach((entry) => {
@@ -148,6 +148,8 @@ export default function History() {
             key={f.value}
             style={[styles.filterChip, filter === f.value && styles.filterChipActive]}
             onPress={() => setFilter(f.value)}
+            accessibilityRole="button"
+            accessibilityState={{ selected: filter === f.value }}
           >
             <Text style={[styles.filterChipText, filter === f.value && styles.filterChipTextActive]}>
               {f.label}

@@ -1,9 +1,9 @@
+import * as Clipboard from 'expo-clipboard';
 import { useLocalSearchParams } from 'expo-router';
 import { useEffect, useState } from 'react';
 import {
   ActivityIndicator,
   Alert,
-  Clipboard,
   Image,
   Pressable,
   ScrollView,
@@ -74,7 +74,7 @@ export default function OrderDetail() {
       if (imagePath) {
         const { data: signed } = await supabase.storage
           .from('scan-images')
-          .createSignedUrl(imagePath, 60 * 60);
+          .createSignedUrl(imagePath, 60 * 60 * 24 * 7);
         if (!cancelled && signed) {
           setImageUrl(signed.signedUrl);
         }
@@ -163,8 +163,8 @@ export default function OrderDetail() {
             </View>
             <Pressable
               style={styles.copyButton}
-              onPress={() => {
-                Clipboard.setString(order.tracking_number!);
+              onPress={async () => {
+                await Clipboard.setStringAsync(order.tracking_number!);
                 Alert.alert('Copied', 'Tracking number copied to clipboard.');
               }}
             >

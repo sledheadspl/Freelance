@@ -53,18 +53,19 @@ Deno.serve(async (req) => {
     return jsonResponse({ error: 'storagePath must be within your own folder' }, { status: 403 });
   }
 
-  // Rate limit per spec section 9/11: free tier capped at 10 scans/month, enforced server-side.
-  const { data: profile, error: profileError } = await userClient
-    .from('profiles')
-    .select('subscription_tier, scans_this_month')
-    .eq('id', user.id)
-    .single();
+  // Rate limit: atomic increment that rejects if the free-tier cap is reached.
+  // Using an RPC avoids the read-check-write race condition on concurrent requests.
+  const serviceClient = getServiceClient();
+  const { data: newCount, error: rpcError } = await serviceClient.rpc('increment_scan_count', {
+    p_user_id: user.id,
+    p_monthly_limit: FREE_TIER_MONTHLY_SCANS,
+  });
 
-  if (profileError || !profile) {
+  if (rpcError) {
     return jsonResponse({ error: 'Could not load profile' }, { status: 500 });
   }
 
-  if (profile.subscription_tier === 'free' && profile.scans_this_month >= FREE_TIER_MONTHLY_SCANS) {
+  if (newCount == null) {
     return jsonResponse(
       { error: 'Monthly scan limit reached. Upgrade to Pro for unlimited scans.' },
       { status: 429 }
@@ -110,8 +111,6 @@ Deno.serve(async (req) => {
     roi = computeRoi({ comps: [], category: identification.category });
   }
 
-  const serviceClient = getServiceClient();
-
   const { data: scan, error: insertError } = await serviceClient
     .from('scans')
     .insert({
@@ -146,11 +145,6 @@ Deno.serve(async (req) => {
       { status: 500 }
     );
   }
-
-  await serviceClient
-    .from('profiles')
-    .update({ scans_this_month: profile.scans_this_month + 1 })
-    .eq('id', user.id);
 
   return jsonResponse(
     {

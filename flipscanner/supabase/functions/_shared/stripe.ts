@@ -99,6 +99,11 @@ export async function verifyStripeSignature(
     return false;
   }
 
+  // Reject replayed webhooks older than 5 minutes (Stripe's recommended tolerance).
+  if (Math.abs(Date.now() / 1000 - parseInt(timestamp, 10)) > 300) {
+    return false;
+  }
+
   const signedPayload = `${timestamp}.${payload}`;
 
   const key = await crypto.subtle.importKey(

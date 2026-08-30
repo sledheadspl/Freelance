@@ -39,7 +39,7 @@ export default function DiscoveryResult() {
       if (data.image_url) {
         const { data: signed } = await supabase.storage
           .from('scan-images')
-          .createSignedUrl(data.image_url, 60 * 60);
+          .createSignedUrl(data.image_url, 60 * 60 * 24 * 7);
         if (!cancelled && signed) {
           setImageUrl(signed.signedUrl);
         }

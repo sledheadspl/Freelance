@@ -55,17 +55,18 @@ Deno.serve(async (req) => {
   }
 
   // Discoveries share the same monthly scan budget as resale scans.
-  const { data: profile, error: profileError } = await userClient
-    .from('profiles')
-    .select('subscription_tier, scans_this_month')
-    .eq('id', user.id)
-    .single();
+  // Atomic increment to avoid race condition on concurrent requests.
+  const serviceClient = getServiceClient();
+  const { data: newCount, error: rpcError } = await serviceClient.rpc('increment_scan_count', {
+    p_user_id: user.id,
+    p_monthly_limit: FREE_TIER_MONTHLY_SCANS,
+  });
 
-  if (profileError || !profile) {
+  if (rpcError) {
     return jsonResponse({ error: 'Could not load profile' }, { status: 500 });
   }
 
-  if (profile.subscription_tier === 'free' && profile.scans_this_month >= FREE_TIER_MONTHLY_SCANS) {
+  if (newCount == null) {
     return jsonResponse(
       { error: 'Monthly scan limit reached. Upgrade to Pro for unlimited scans.' },
       { status: 429 }
@@ -108,8 +109,6 @@ Deno.serve(async (req) => {
     roi = computeRoi({ comps: [], category: result.category });
   }
 
-  const serviceClient = getServiceClient();
-
   const { data: discovery, error: insertError } = await serviceClient
     .from('discoveries')
     .insert({
@@ -139,11 +138,6 @@ Deno.serve(async (req) => {
   if (insertError || !discovery) {
     return jsonResponse({ error: 'Failed to save discovery', details: insertError?.message }, { status: 500 });
   }
-
-  await serviceClient
-    .from('profiles')
-    .update({ scans_this_month: profile.scans_this_month + 1 })
-    .eq('id', user.id);
 
   return jsonResponse({ discovery }, { status: 200 });
 });

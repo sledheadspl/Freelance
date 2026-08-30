@@ -39,9 +39,17 @@ Deno.serve(async (req) => {
     return jsonResponse({ newOrders: [] }, { status: 200 });
   }
 
+  const serviceClient = getServiceClient();
+
   let accessToken: string;
   try {
-    accessToken = await getUserAccessToken(profile.ebay_refresh_token);
+    const refreshed = await getUserAccessToken(profile.ebay_refresh_token);
+    accessToken = refreshed.accessToken;
+    // eBay rotates the refresh token on every use — persist immediately.
+    await serviceClient
+      .from('profiles')
+      .update({ ebay_refresh_token: refreshed.refreshToken })
+      .eq('id', user.id);
   } catch (error) {
     return jsonResponse(
       { error: 'eBay authorization expired. Reconnect your eBay account in Settings.', details: error instanceof Error ? error.message : String(error) },
@@ -58,8 +66,6 @@ Deno.serve(async (req) => {
       { status: 502 }
     );
   }
-
-  const serviceClient = getServiceClient();
   const newOrders: Array<{ inventoryId: string; ebayOrderId: string }> = [];
 
   for (const ebayOrder of ebayOrders) {
@@ -84,7 +90,7 @@ Deno.serve(async (req) => {
 
       if (existingOrder) continue;
 
-      await serviceClient.from('orders').insert({
+      const { error: orderInsertError } = await serviceClient.from('orders').insert({
         user_id: user.id,
         inventory_id: inventoryItem.id,
         ebay_order_id: ebayOrder.orderId,
@@ -92,6 +98,11 @@ Deno.serve(async (req) => {
         ship_by: ebayOrder.shipByDate ? ebayOrder.shipByDate.slice(0, 10) : null,
         status: 'awaiting_shipment',
       });
+
+      if (orderInsertError) {
+        console.error('Failed to insert order row, skipping inventory update', orderInsertError);
+        continue;
+      }
 
       await serviceClient
         .from('inventory')

@@ -127,6 +127,8 @@ export default function Scan() {
           style={[styles.captureButton, capturing ? styles.captureButtonDisabled : null]}
           onPress={takePicture}
           disabled={capturing}
+          accessibilityLabel="Take photo"
+          accessibilityRole="button"
         />
       </View>
     </View>

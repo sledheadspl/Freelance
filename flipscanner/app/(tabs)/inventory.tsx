@@ -44,7 +44,7 @@ export default function Inventory() {
         .filter((path): path is string => !!path);
 
       if (paths.length > 0) {
-        const { data: signed } = await supabase.storage.from('scan-images').createSignedUrls(paths, 60 * 60);
+        const { data: signed } = await supabase.storage.from('scan-images').createSignedUrls(paths, 60 * 60 * 24 * 7);
         if (signed) {
           const urlMap: Record<string, string> = {};
           signed.forEach((entry) => {
@@ -119,8 +119,8 @@ export default function Inventory() {
                 </View>
               </View>
 
-              <View style={[styles.statusBadge, { backgroundColor: STATUS_COLORS[item.status as InventoryStatus].bg }]}>
-                <Text style={[styles.statusBadgeText, { color: STATUS_COLORS[item.status as InventoryStatus].text }]}>
+              <View style={[styles.statusBadge, { backgroundColor: (STATUS_COLORS[item.status as InventoryStatus] ?? STATUS_COLORS.unlisted).bg }]}>
+                <Text style={[styles.statusBadgeText, { color: (STATUS_COLORS[item.status as InventoryStatus] ?? STATUS_COLORS.unlisted).text }]}>
                   {STATUS_LABELS[item.status as InventoryStatus]}
                 </Text>
               </View>

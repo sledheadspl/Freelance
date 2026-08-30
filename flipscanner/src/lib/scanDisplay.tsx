@@ -29,9 +29,11 @@ export const CONDITION_LABELS: Record<string, string> = {
   parts_only: 'Parts Only',
 };
 
+const usdFormatter = new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' });
+
 export function formatCurrency(value: number | null): string {
   if (value == null) return '—';
-  return `$${value.toFixed(2)}`;
+  return usdFormatter.format(value);
 }
 
 export function formatRelativeDate(isoDate: string): string {
@@ -51,10 +53,20 @@ export function formatRelativeDate(isoDate: string): string {
   return date.toLocaleDateString();
 }
 
+const GRADE_LABELS: Record<ConfidenceGrade, string> = {
+  A: 'High confidence',
+  B: 'Good confidence',
+  C: 'Low confidence',
+  D: 'Very low confidence',
+};
+
 export function GradeBadge({ grade }: { grade: ConfidenceGrade | null }) {
   const value = grade ?? 'D';
   return (
-    <View style={[styles.gradeBadge, { backgroundColor: GRADE_COLORS[value] }]}>
+    <View
+      style={[styles.gradeBadge, { backgroundColor: GRADE_COLORS[value] }]}
+      accessibilityLabel={`Confidence grade: ${GRADE_LABELS[value]}`}
+    >
       <Text style={styles.gradeBadgeText}>{value}</Text>
     </View>
   );
@@ -63,7 +75,10 @@ export function GradeBadge({ grade }: { grade: ConfidenceGrade | null }) {
 export function RecommendationBadge({ recommendation }: { recommendation: Recommendation | null }) {
   if (!recommendation) return null;
   return (
-    <View style={[styles.recommendationBadge, { backgroundColor: RECOMMENDATION_COLORS[recommendation] }]}>
+    <View
+      style={[styles.recommendationBadge, { backgroundColor: RECOMMENDATION_COLORS[recommendation] }]}
+      accessibilityLabel={`Recommendation: ${RECOMMENDATION_LABELS[recommendation]}`}
+    >
       <Text style={styles.recommendationText}>{RECOMMENDATION_LABELS[recommendation]}</Text>
     </View>
   );

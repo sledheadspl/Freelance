@@ -4,6 +4,18 @@
 
 import { getEbayApiBaseUrl, refreshAccessToken } from './ebayOAuth.ts';
 
+const EBAY_SELL_TIMEOUT_MS = 20_000;
+
+async function fetchWithTimeout(url: string, init: RequestInit = {}): Promise<Response> {
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), EBAY_SELL_TIMEOUT_MS);
+  try {
+    return await fetch(url, { ...init, signal: controller.signal });
+  } finally {
+    clearTimeout(timeout);
+  }
+}
+
 export interface EbayListingInput {
   sku: string;
   title: string;
@@ -36,14 +48,26 @@ export function mapConditionToEbay(conditionEstimate: string | null): string {
   return 'USED_GOOD';
 }
 
-/** Exchanges the stored eBay refresh token for a fresh user access token. */
-export async function getUserAccessToken(refreshToken: string): Promise<string> {
+export interface RefreshedTokens {
+  accessToken: string;
+  refreshToken: string;
+}
+
+/**
+ * Exchanges the stored eBay refresh token for a fresh access token.
+ * eBay rotates the refresh token on every use — the caller MUST persist the
+ * new refreshToken to profiles.ebay_refresh_token before using the access token.
+ */
+export async function getUserAccessToken(refreshToken: string): Promise<RefreshedTokens> {
   const tokens = await refreshAccessToken(refreshToken);
-  return tokens.accessToken;
+  if (!tokens.refreshToken) {
+    throw new Error('eBay token refresh did not return a new refresh token');
+  }
+  return { accessToken: tokens.accessToken, refreshToken: tokens.refreshToken };
 }
 
 async function ebayRequest(accessToken: string, path: string, init: RequestInit = {}): Promise<Response> {
-  return fetch(`${getEbayApiBaseUrl()}${path}`, {
+  return fetchWithTimeout(`${getEbayApiBaseUrl()}${path}`, {
     ...init,
     headers: {
       Authorization: `Bearer ${accessToken}`,

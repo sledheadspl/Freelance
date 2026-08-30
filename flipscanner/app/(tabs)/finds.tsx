@@ -29,7 +29,7 @@ export default function Finds() {
       const paths = data.map((d) => d.image_url).filter((path): path is string => !!path);
 
       if (paths.length > 0) {
-        const { data: signed } = await supabase.storage.from('scan-images').createSignedUrls(paths, 60 * 60);
+        const { data: signed } = await supabase.storage.from('scan-images').createSignedUrls(paths, 60 * 60 * 24 * 7);
         if (signed) {
           const urlMap: Record<string, string> = {};
           signed.forEach((entry) => {

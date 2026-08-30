@@ -3,7 +3,7 @@ import { z } from 'npm:zod@^4';
 import { corsHeaders, jsonResponse } from '../_shared/cors.ts';
 import { getServiceClient, getUserClient } from '../_shared/supabaseClient.ts';
 import { suggestCategoryId } from '../_shared/ebayCategory.ts';
-import { getUserAccessToken, publishListing } from '../_shared/ebaySell.ts';
+import { getUserAccessToken, publishListing as publishEbayListing } from '../_shared/ebaySell.ts';
 
 const requestSchema = z.object({
   inventoryId: z.string().uuid(),
@@ -104,7 +104,13 @@ Deno.serve(async (req) => {
 
   let accessToken: string;
   try {
-    accessToken = await getUserAccessToken(profile.ebay_refresh_token);
+    const refreshed = await getUserAccessToken(profile.ebay_refresh_token);
+    accessToken = refreshed.accessToken;
+    // eBay rotates the refresh token on every use — persist immediately.
+    await getServiceClient()
+      .from('profiles')
+      .update({ ebay_refresh_token: refreshed.refreshToken })
+      .eq('id', user.id);
   } catch (error) {
     return jsonResponse(
       { error: 'eBay authorization expired. Reconnect your eBay account in Settings.', details: error instanceof Error ? error.message : String(error) },
@@ -114,7 +120,7 @@ Deno.serve(async (req) => {
 
   let result;
   try {
-    result = await publishListing(accessToken, {
+    result = await publishEbayListing(accessToken, {
       sku: item.id,
       title: item.listing_title,
       description: item.listing_description,

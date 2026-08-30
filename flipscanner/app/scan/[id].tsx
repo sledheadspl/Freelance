@@ -56,7 +56,7 @@ export default function ScanResult() {
       if (data.image_url) {
         const { data: signed } = await supabase.storage
           .from('scan-images')
-          .createSignedUrl(data.image_url, 60 * 60);
+          .createSignedUrl(data.image_url, 60 * 60 * 24 * 7);
         if (!cancelled && signed) {
           setImageUrl(signed.signedUrl);
         }
@@ -89,6 +89,27 @@ export default function ScanResult() {
     const price = parseFloat(purchasePriceInput);
     if (Number.isNaN(price) || price < 0) {
       Alert.alert('Invalid price', 'Enter a valid purchase price.');
+      return;
+    }
+    if (price === 0) {
+      Alert.alert('Free item?', 'You entered $0.00. Are you sure you got this for free?', [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Yes, it was free',
+          onPress: async () => {
+            setAddingToInventory(true);
+            try {
+              const created = await addToInventory(session!.user.id, scan!.id, 0);
+              setInventoryItem(created);
+              setShowBuyForm(false);
+            } catch (err) {
+              Alert.alert('Error', err instanceof Error ? err.message : 'Failed to add to inventory.');
+            } finally {
+              setAddingToInventory(false);
+            }
+          },
+        },
+      ]);
       return;
     }
 

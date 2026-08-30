@@ -135,12 +135,15 @@ export async function getComps(searchQuery: string): Promise<CompsResult> {
 
   const { data: cached } = await serviceClient
     .from('comps_cache')
-    .select('comps, fetched_at')
+    .select('comps, fetched_at, active_listing_count')
     .eq('query_key', queryKey)
     .maybeSingle();
 
   if (cached?.comps && Date.now() - new Date(cached.fetched_at).getTime() < CACHE_TTL_MS) {
-    return { comps: cached.comps as CompInput[], activeListingCount: await fetchActiveListingCount(searchQuery) };
+    return {
+      comps: cached.comps as CompInput[],
+      activeListingCount: cached.active_listing_count ?? null,
+    };
   }
 
   const [comps, activeListingCount] = await Promise.all([
@@ -150,7 +153,10 @@ export async function getComps(searchQuery: string): Promise<CompsResult> {
 
   await serviceClient
     .from('comps_cache')
-    .upsert({ query_key: queryKey, comps, fetched_at: new Date().toISOString() }, { onConflict: 'query_key' });
+    .upsert(
+      { query_key: queryKey, comps, active_listing_count: activeListingCount, fetched_at: new Date().toISOString() },
+      { onConflict: 'query_key' }
+    );
 
   return { comps, activeListingCount };
 }

@@ -13,6 +13,7 @@ export default function Discover() {
   const [permission, requestPermission] = useCameraPermissions();
   const cameraRef = useRef<CameraView>(null);
   const [photoUri, setPhotoUri] = useState<string | null>(null);
+  const [capturing, setCapturing] = useState(false);
   const [submitting, setSubmitting] = useState(false);
 
   if (!permission) {
@@ -33,9 +34,15 @@ export default function Discover() {
   }
 
   const takePicture = async () => {
-    const photo = await cameraRef.current?.takePictureAsync({ quality: 0.6 });
-    if (photo) {
-      setPhotoUri(photo.uri);
+    if (capturing) return;
+    setCapturing(true);
+    try {
+      const photo = await cameraRef.current?.takePictureAsync({ quality: 0.6 });
+      if (photo) {
+        setPhotoUri(photo.uri);
+      }
+    } finally {
+      setCapturing(false);
     }
   };
 
@@ -104,7 +111,13 @@ export default function Discover() {
         <Text style={styles.hintText}>Snap a photo of anything — rocks, wood, plants, terrain...</Text>
       </View>
       <View style={styles.captureBar}>
-        <Pressable style={styles.captureButton} onPress={takePicture} />
+        <Pressable
+          style={[styles.captureButton, capturing && { opacity: 0.4 }]}
+          onPress={takePicture}
+          disabled={capturing}
+          accessibilityLabel="Take photo"
+          accessibilityRole="button"
+        />
       </View>
     </View>
   );

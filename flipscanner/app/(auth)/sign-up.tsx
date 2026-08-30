@@ -21,10 +21,16 @@ export default function SignUp() {
   const [submitting, setSubmitting] = useState(false);
 
   const onSubmit = async () => {
+    const trimmedEmail = email.trim();
+    if (!trimmedEmail) { setError('Please enter your email.'); return; }
+    if (!trimmedEmail.includes('@')) { setError('Enter a valid email address.'); return; }
+    if (!password) { setError('Please enter your password.'); return; }
+    if (password.length < 6) { setError('Password must be at least 6 characters.'); return; }
+
     setError(null);
     setInfo(null);
     setSubmitting(true);
-    const { error: signUpError } = await signUpWithPassword(email.trim(), password);
+    const { error: signUpError } = await signUpWithPassword(trimmedEmail, password);
     setSubmitting(false);
     if (signUpError) {
       setError(signUpError);
